@@ -111,7 +111,7 @@ export function expandedTimingSteps(steps,groups){
  */
 // Keep timing keyed by the ORIGINAL numbered steps for the HTML hover panel.
 // Serial repeated passes add elapsed time at the exit of each selected region.
-export function repeatAwareNumberedMetrics(steps,groups=[]){
+export function repeatedStepTimeline(steps,groups=[]){
  const transformed=steps.map(s=>({...s}));
  for(const group of normalizeGroups(groups,steps)){
   try{validateGroupBoundary(steps,group.stepIds)}catch{continue}
@@ -121,7 +121,10 @@ export function repeatAwareNumberedMetrics(steps,groups=[]){
   const exits=transformed.filter(s=>ids.has(s.id)&&!transformed.some(child=>ids.has(child.id)&&(child.dependsOn||[]).includes(s.id)));
   for(const step of exits)step.durationHours=(Number(step.durationHours)||0)+extra;
  }
- return processMetrics(transformed);
+ return transformed;
+}
+export function repeatAwareNumberedMetrics(steps,groups=[]){
+ return processMetrics(repeatedStepTimeline(steps,groups));
 }
 export function processMetricsWithGroups(steps,groups=[]){
  const base=processMetrics(steps);
