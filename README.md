@@ -2,6 +2,25 @@
 
 React/Vite department swimlane flow editor for modelling workflows such as TAIJU's tender-to-delivery data flow.
 
+## Interactive HTML export (offline, read-only)
+
+Click **Export Interactive HTML** to download a single self-contained HTML file. It requires no server, network access, React runtime, or external asset files. Open it in Chrome, Safari or Edge.
+
+- Switch between TODAY, TOMORROW, or both diagrams
+- Fit-to-width, zoom in/out and Ctrl+wheel zoom; drag empty canvas space to pan
+- Hover over numbered steps for a summary; click a step to see its full details and predecessors
+- Search the numbered step lists and independently minimise each diagram
+- HTML output is read-only and includes an embedded snapshot of the project (do not share sensitive process details publicly)
+
+## Editor and analysis enhancements
+
+- **Undo / Redo** toolbar actions, including Ctrl/Cmd+Z and Ctrl/Cmd+Y when not editing a text field
+- **Connect steps** mode: choose a source numbered step and click the destination, with circular-dependency protection
+- Zoom controls and fit-width mode for the editor diagrams
+- TODAY vs TOMORROW change summary: added, removed, reordered/moved, details changed and prerequisites changed
+- Step metadata: responsible role, system, activity type, inputs, outputs, work hours and waiting hours
+- Indicative critical-path calculation based on dependencies and estimated hours. Parallel branches use the longest prerequisite. This is an estimate, not a project schedule or resource-constrained simulation.
+
 ## TODAY / TOMORROW and exports
 - Independent TODAY and TOMORROW step sequences, displayed in stacked swimlane diagrams
 - Select a mode on the left, or click a diagram node, to edit that mode
@@ -52,4 +71,4 @@ Version 2 JSON stores `version`, `title`, `subtitle`, shared `departments: [{id,
 The order of each flow's steps array is its process sequence. The order of the departments array is the swimlane order. Both are independent.
 
 ## Status
-Initial prototype. No backend required. Files remain in your browser unless exported as JSON.
+Active prototype. No backend required. Source-of-truth files remain in the browser until exported as JSON. Run `npm test` and `npm run build` before deploying. Browser behaviour, PowerPoint interoperability, and very large diagrams require practical testing.
