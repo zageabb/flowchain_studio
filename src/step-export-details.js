@@ -31,3 +31,24 @@ export function stepExportDetails(project,flow,step,index){
   ]
  };
 }
+
+// Presentation appendix rows use finite slices so no description/IO text is silently discarded.
+// Each fragment retains a field label and may continue onto subsequent slides.
+export function splitFieldText(value,maxChars=94){
+ const result=[];
+ for(const line of String(value??'').split(/\r?\n/)){
+  const parts=line.match(new RegExp('.{1,'+maxChars+'}','g'))||[''];
+  result.push(...parts);
+ }
+ return result.length?result:[''];
+}
+export function stepDetailPages(details,maxLines=18){
+ const entries=[];
+ for(const [label,value] of details.fields){
+  const lines=splitFieldText(value);
+  lines.forEach((text,i)=>entries.push({label:i===0?label:label+' (cont.)',value:text}));
+ }
+ const pages=[];
+ for(let i=0;i<entries.length;i+=maxLines)pages.push(entries.slice(i,i+maxLines));
+ return pages.length?pages:[[]];
+}
