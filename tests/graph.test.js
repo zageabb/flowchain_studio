@@ -79,3 +79,16 @@ test('diagnostics flag isolated steps and distinguish split/join nodes',()=>{
  assert.equal(out.isolated,1);
  assert.ok(out.warnings.some(w=>w.includes('disconnected')));
 });
+
+test('same-lane parallel nodes follow their upstream lane positions instead of array order',()=>{
+ const departments=[{id:'high',name:'High'},{id:'middle',name:'Middle'},{id:'low',name:'Low'}];
+ const steps=[
+  {id:'top',name:'top',departmentId:'high',dependsOn:[]},
+  {id:'bottom',name:'bottom',departmentId:'low',dependsOn:[]},
+  {id:'bottomTarget',name:'bottomTarget',departmentId:'middle',dependsOn:['bottom']},
+  {id:'topTarget',name:'topTarget',departmentId:'middle',dependsOn:['top']}
+ ];
+ const layout=graphLayout(steps,departments);
+ assert.ok(layout.positions.get('topTarget').y<layout.positions.get('bottomTarget').y);
+ assert.equal(graphEdges(steps,layout.positions).length,2);
+});
