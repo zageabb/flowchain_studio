@@ -18,7 +18,7 @@ test('HTML diagram keeps source nodes and annotates repeat on their connecting e
  assert.match(svg,/data-id="group:loop"/);
  assert.match(svg,/×3/);
  assert.match(svg,/class="node repeat-zigzag"/);
- assert.match(svg,/<path d="M [^"]+" stroke="#d91a48"/);
+ assert.match(svg,/<path d="M [^"]+"[^>]*stroke="#d91a48"/);
  assert.doesNotMatch(svg,/<rect[^>]*fill="#334e72"/);
  assert.match(svg,/data-id="b"/);
  assert.match(svg,/data-id="c"/);
@@ -102,6 +102,8 @@ test('repeat between step 4 and step 5 leaves both step nodes visible in HTML',a
  assert.equal(waves.length,1);
  assert.equal(waves[0].from,'4');
  assert.equal(waves[0].to,'5');
+ assert.match(waves[0].examplePasses,/4\.1 → 5\.1/);
+ assert.match(waves[0].examplePasses,/4\.3 → 5\.3/);
  assert.equal(graphSegmentsWithoutRepeatEdges(five,layout.positions,waves,graphSegments).length,
               graphSegments(five.slice(0,4),layout.positions).length);
  const html=buildInteractiveHtml(project45,null,'1.12.3');
