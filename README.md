@@ -36,6 +36,13 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Export one editable **PPTX** with slide 1 = TODAY, slide 2 = TOMORROW, slide 3 = the numbered step list for both flows. Very long lists continue on additional slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## Smarter layout and new projects
+
+- Parallel steps sharing the same department/layer now use their prerequisite positions to choose vertical ordering. This reduces avoidable crossing lines in the live view, interactive HTML and exports without changing the dependencies.
+- Use **+ New blank process** beneath **Named projects / snapshots** to start a separate process.
+- Use **Save snapshot** to keep each process under its own name and **Restore** to switch between saved designs. The active process is still autosaved in browser storage. Snapshot storage is browser-local; export JSON for reliable transfer or backup.
+- The new layout is deterministic and not a full obstacle-avoiding routing engine; dense process maps may still need more advanced routing.
+
 ## Shared connector drawing
 
 Parallel branches may overlap along an orthogonal trunk (for example, around steps 8–11). FlowChain merges coincident horizontal/vertical connector segments before drawing. This prevents double-weight dotted lines in the browser, exported PNGs, and editable PowerPoint slides without changing the dependency model.
