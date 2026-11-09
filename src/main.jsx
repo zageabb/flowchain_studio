@@ -1,17 +1,17 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {version as appVersion} from '../package.json';
 import {createRoot} from 'react-dom/client';
-import {sampleProject,uid,validateProject} from './sample';
-import {exportPng,exportPptx} from './export';
-import {exportInteractiveHtml} from './interactive-export';
-import {compareFlows} from './compare';
-import {processMetrics} from './metrics';
-import {timelineGeometry} from './timeline';
-import {collapsedFlow,validateGroupBoundary,normalizeGroups,expandedTimingSteps,processMetricsWithGroups} from './subprocess';
-import {readTemplates,saveTemplate,insertTemplate} from './subprocess-templates';
-import {computeProjectElkOrdering} from './elk-layout';
-import {listSnapshots,saveSnapshot,deleteSnapshot} from './snapshots';
-import {graphLayout,graphSegments,graphDiagnostics,canDependOn,removeStep as removeGraphStep,insertStep} from './graph';
+import {sampleProject,uid,validateProject} from './sample.js';
+import {exportPng,exportPptx} from './export.js';
+import {exportInteractiveHtml} from './interactive-export.js';
+import {compareFlows} from './compare.js';
+import {processMetrics} from './metrics.js';
+import {timelineGeometry} from './timeline.js';
+import {collapsedFlow,validateGroupBoundary,normalizeGroups,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
+import {readTemplates,saveTemplate,insertTemplate} from './subprocess-templates.js';
+import {computeProjectElkOrdering} from './elk-layout.js';
+import {listSnapshots,saveSnapshot,deleteSnapshot} from './snapshots.js';
+import {graphLayout,graphSegments,graphDiagnostics,canDependOn,removeStep as removeGraphStep,insertStep} from './graph.js';
 import './style.css';
 const copy=x=>structuredClone(x);
 function load(){try{const data=localStorage.getItem('flowchain-v2')||localStorage.getItem('flowchain-v1');return data?validateProject(JSON.parse(data)):copy(sampleProject)}catch{return copy(sampleProject)}}
