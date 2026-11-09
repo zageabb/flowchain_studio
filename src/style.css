@@ -67,3 +67,20 @@
 .group-editor>input{width:115px;flex:1;min-width:80px;padding:6px}.group-editor label{font-size:11px;display:flex;gap:4px;align-items:center}
 .group-editor label input{width:64px;padding:5px}.group-editor span{font-size:11px;color:#60738a}
 .group-editor button{padding:6px 8px;font-size:11px}
+
+/* Repeat management stays visible directly above the process step list. */
+.group-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%}
+.group-heading strong{font-size:11px;letter-spacing:.045em;color:#46576a}
+.group-heading button{padding:6px 8px;font-size:11px}
+.group-help,.group-empty{font-size:11px;line-height:1.35;margin:0;color:#667a90}
+.group-empty{padding:6px 0;font-style:italic}
+.group-editor{border:1px solid #d8e2ef;align-items:stretch}
+.group-editor>input{width:100%;flex:auto;min-width:0;font-size:12px}
+.group-editor .group-range{width:100%;font-size:11px;color:#5b6f85}
+.group-editor label{width:100%;justify-content:flex-start}
+.group-editor label input{max-width:85px}
+.group-buttons{display:flex;flex-wrap:wrap;gap:5px;width:100%}
+.group-buttons button{font-size:11px;padding:5px 7px}
+.group-buttons button.danger{color:#ad2448}
+.repeat-connector{cursor:pointer}
+.repeat-connector:focus-visible{outline:2px solid #d91a48}
