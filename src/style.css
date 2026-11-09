@@ -5,3 +5,9 @@
 .flow-panel{border-left:4px solid #cfd7e2}.flow-panel.flow-active{border-left:4px solid #d91647}.flow-panel .diagram-scroll{padding-bottom:12px}
 .header-actions{flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:650px){.header-actions{width:100%;justify-content:flex-start}.header-actions button{padding:7px;font-size:11px}}
+
+.flow-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.flow-controls label{display:flex;align-items:center;gap:7px;font-size:12px;color:#6d7a8d}
+.flow-controls select{width:auto;min-width:100px;padding:6px 9px;font-size:12px}
+.flow-controls button{font-size:12px;min-width:98px;padding:7px 11px}
+@media(max-width:650px){.flow-controls{width:100%;justify-content:flex-start}}
