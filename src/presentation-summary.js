@@ -1,8 +1,8 @@
 // Pure summary data shared by editable PPTX output and regression tests.
-import {compareFlows} from './compare';
-import {processMetrics} from './metrics';
-import {graphDiagnostics} from './graph';
-import {processMetricsWithGroups} from './subprocess';
+import {compareFlows} from './compare.js';
+import {processMetrics} from './metrics.js';
+import {graphDiagnostics} from './graph.js';
+import {processMetricsWithGroups} from './subprocess.js';
 
 export function presentationSummary(project){
  const diff=compareFlows(project);
