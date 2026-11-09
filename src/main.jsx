@@ -2,17 +2,17 @@ import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {sampleProject,uid,validateProject} from './sample';
 import {exportPng,exportPptx} from './export';
-import {graphLayout,graphEdges,edgePath,canDependOn,removeStep as removeGraphStep,insertStep} from './graph';
+import {graphLayout,graphSegments,canDependOn,removeStep as removeGraphStep,insertStep} from './graph';
 import './style.css';
 const copy=x=>structuredClone(x);
 function load(){try{const data=localStorage.getItem('flowchain-v2')||localStorage.getItem('flowchain-v1');return data?validateProject(JSON.parse(data)):copy(sampleProject)}catch{return copy(sampleProject)}}
 function Diagram({doc,chosen,onChoose,lineStyle='solid'}){
  const g=graphLayout(doc.steps,doc.departments);
- const edges=graphEdges(doc.steps,g.positions);
+ const segments=graphSegments(doc.steps,g.positions);
  return <div className="diagram-scroll"><svg viewBox={`0 0 ${g.width} ${g.height}`} width={g.width} height={g.height} aria-label="Interactive parallel process swimlane diagram" role="img">
  <text x="18" y="45" fontSize="12" fontWeight="bold" fill="#66758b">DEPARTMENT</text><text x="210" y="45" fontSize="12" fontWeight="bold" fill="#66758b">DEPENDENCY FLOW →</text>
  {doc.departments.map((d,i)=><g key={d.id}><rect x="5" y={g.laneStarts[i]} width={g.width-10} height={g.laneHeights[i]-8} fill={i%2?'#e9eef4':'#f3f6fa'} rx="8"/><text x="17" y={g.laneStarts[i]+g.laneHeights[i]/2+4} fontSize="13" fontWeight="bold" fill="#29384b">{d.name}</text></g>)}
- {edges.map(({source,target,a,b})=><path key={source+'-'+target} d={edgePath(a,b)} fill="none" stroke="#e01949" strokeWidth="3" strokeDasharray={lineStyle==='dotted'?'2 9':undefined} strokeLinecap="round" strokeLinejoin="round"/>)}
+ {segments.map((seg,i)=><line key={i} x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2} stroke="#e01949" strokeWidth="3" strokeDasharray={lineStyle==='dotted'?'2 9':undefined} strokeLinecap="round"/>)}
  {doc.steps.map((step,i)=>{const p=g.positions.get(step.id);return <g key={step.id} role="button" tabIndex={0} aria-label={'Edit '+step.name} onClick={()=>onChoose(step.id)} onKeyDown={e=>e.key==='Enter'&&onChoose(step.id)} className="node"><circle cx={p.x} cy={p.y} r={chosen===step.id?20:16} fill={chosen===step.id?'#960d37':'#df1949'} stroke="white" strokeWidth="3"/><text x={p.x} y={p.y+4} textAnchor="middle" fill="white" fontSize="11" fontWeight="bold">{i+1}</text><title>{step.name}</title></g>})}
  </svg></div>
 }
