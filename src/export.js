@@ -1,9 +1,9 @@
 // Browser-only export: three separate high-resolution PNGs and editable PowerPoint with a step-list slide.
-import {graphLayout,graphEdges,graphSegments} from './graph';
-import {presentationSummary} from './presentation-summary';
-import {processMetrics} from './metrics';
-import {stepScreenTip} from './step-export-details';
-import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess';
+import {graphLayout,graphEdges,graphSegments} from './graph.js';
+import {presentationSummary} from './presentation-summary.js';
+import {processMetrics} from './metrics.js';
+import {stepScreenTip} from './step-export-details.js';
+import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 function geometry(project,flow,elkOrders=null){
