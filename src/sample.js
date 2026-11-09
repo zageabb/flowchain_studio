@@ -1,4 +1,5 @@
 import {normalizeSteps,assertGraph} from './graph';
+import {normalizeGroups} from './subprocess';
 export const uid=()=>globalThis.crypto?.randomUUID?.()||Math.random().toString(36).slice(2);
 export const sample={
  version:1,title:"Supply Chain Data Flow",subtitle:"Tender to Delivery",
@@ -31,9 +32,9 @@ export function validateProject(data){
  if(data?.flows){
   const today=validateDocument({...data,steps:data.flows.today?.steps||[]});
   const tomorrow=validateDocument({...data,steps:data.flows.tomorrow?.steps||[]});
-  return {version:2,title:today.title,subtitle:today.subtitle,departments:today.departments,flows:{today:{steps:today.steps,lineStyle:data.flows.today?.lineStyle==='dotted'?'dotted':'solid'},tomorrow:{steps:tomorrow.steps,lineStyle:data.flows.tomorrow?.lineStyle==='dotted'?'dotted':'solid'}}};
+  return {version:2,title:today.title,subtitle:today.subtitle,departments:today.departments,flows:{today:{steps:today.steps,groups:normalizeGroups(data.flows.today?.groups,today.steps),lineStyle:data.flows.today?.lineStyle==='dotted'?'dotted':'solid'},tomorrow:{steps:tomorrow.steps,groups:normalizeGroups(data.flows.tomorrow?.groups,tomorrow.steps),lineStyle:data.flows.tomorrow?.lineStyle==='dotted'?'dotted':'solid'}}};
  }
  const old=validateDocument(data);
- return {version:2,title:old.title,subtitle:old.subtitle,departments:old.departments,flows:{today:{steps:old.steps,lineStyle:'solid'},tomorrow:{steps:structuredClone(old.steps),lineStyle:'solid'}}};
+ return {version:2,title:old.title,subtitle:old.subtitle,departments:old.departments,flows:{today:{steps:old.steps,groups:[],lineStyle:'solid'},tomorrow:{steps:structuredClone(old.steps),groups:[],lineStyle:'solid'}}};
 }
 export const sampleProject=validateProject(sample);
