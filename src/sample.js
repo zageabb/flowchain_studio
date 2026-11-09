@@ -22,7 +22,7 @@ export function validateDocument(doc){
  if(new Set(doc.departments.map(d=>d.id)).size!==doc.departments.length)throw Error("Duplicate department IDs.");
  if(doc.steps.some(s=>!s.id||typeof s.name!=="string"||!doc.departments.some(d=>d.id===s.departmentId)))throw Error("Invalid steps or missing department.");
  if(new Set(doc.steps.map(s=>s.id)).size!==doc.steps.length)throw Error("Duplicate step IDs.");
- const steps=normalizeSteps(doc.steps.map(s=>({id:String(s.id),name:s.name,departmentId:s.departmentId,description:String(s.description||''),...(Array.isArray(s.dependsOn)?{dependsOn:s.dependsOn}:{} )})));
+ const steps=normalizeSteps(doc.steps.map(s=>({id:String(s.id),name:s.name,departmentId:s.departmentId,description:String(s.description||''),owner:String(s.owner||''),system:String(s.system||''),inputs:String(s.inputs||''),outputs:String(s.outputs||''),activityType:['manual','automated','ai-assisted','approval','decision'].includes(s.activityType)?s.activityType:'manual',durationHours:Math.max(0,Number(s.durationHours)||0),waitHours:Math.max(0,Number(s.waitHours)||0),...(Array.isArray(s.dependsOn)?{dependsOn:s.dependsOn}:{} )})));
  assertGraph(steps);
  return {version:1,title:String(doc.title||'Untitled Flow'),subtitle:String(doc.subtitle||''),departments:doc.departments.map(d=>({id:String(d.id),name:d.name})),steps};
 }
