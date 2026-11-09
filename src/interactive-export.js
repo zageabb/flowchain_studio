@@ -3,7 +3,7 @@
 import {graphLayout,graphSegments} from './graph.js';
 import {processMetrics} from './metrics.js';
 import {timelineSvg} from './timeline.js';
-import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
+import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups,repeatedStepTimeline} from './subprocess.js';
 import {repeatConnectionAnnotations,graphSegmentsWithoutRepeatEdges,svgPointPath} from './repeat-zigzag.js';
 
 const xml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
@@ -53,7 +53,7 @@ export function buildInteractiveHtml(project,elkOrders=null,appVersion=''){
   }
   return [flow,{hours:m.hours,workHours:m.totalWorkHours,waitHours:m.totalWaitHours,totalEffortHours:m.totalEffortHours,byStep,earlyStart:Object.fromEntries(m.starts),latestStart:Object.fromEntries(m.latestStarts),latestFinish:Object.fromEntries(m.latestFinish),float:Object.fromEntries(m.floatHours),critical:m.criticalSteps}];
  }));
- const timelineToday=timelineSvg(expandedTimingSteps(project.flows.today.steps,project.flows.today.groups||[]),'today'),timelineTomorrow=timelineSvg(expandedTimingSteps(project.flows.tomorrow.steps,project.flows.tomorrow.groups||[]),'tomorrow');
+ const timelineToday=timelineSvg(repeatedStepTimeline(project.flows.today.steps,project.flows.today.groups||[]),'today'),timelineTomorrow=timelineSvg(repeatedStepTimeline(project.flows.tomorrow.steps,project.flows.tomorrow.groups||[]),'tomorrow');
  const timeJson=JSON.stringify(timeData).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
  const versionLabel=appVersion?'v'+xml(appVersion):'Version not specified';
  const html=String.raw`<!doctype html>
