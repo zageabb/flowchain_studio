@@ -1,5 +1,5 @@
 // Process metrics are estimates and do not account for resource constraints.
-import {assertGraph} from './graph';
+import {assertGraph} from './graph.js';
 export function processMetrics(steps){
  assertGraph(steps);
  const byId=new Map(steps.map(s=>[s.id,s]));
