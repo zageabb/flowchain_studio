@@ -43,3 +43,28 @@ test('process totals account for waiting independently of work',()=>{
  assert.equal(m.totalWaitHours,7);
  assert.equal(m.hours,10.2);
 });
+
+test('CPM latest dates, float and critical activities respect parallel branches',()=>{
+ const steps=[s('a',[],2),s('b',['a'],3),s('c',['a'],6),s('d',['b','c'],2)];
+ const m=processMetrics(steps);
+ assert.equal(m.hours,10);
+ assert.equal(m.starts.get('b'),2);
+ assert.equal(m.finish.get('c'),8);
+ assert.equal(m.latestStarts.get('b'),5);
+ assert.equal(m.latestFinish.get('b'),8);
+ assert.equal(m.floatHours.get('b'),3);
+ assert.equal(m.floatHours.get('c'),0);
+ assert.equal(m.floatHours.get('a'),0);
+ assert.deepEqual(m.criticalSteps,['a','c','d']);
+});
+test('independent terminal branches get float relative to overall completion',()=>{
+ const m=processMetrics([s('short',[],2),s('long',[],5)]);
+ assert.equal(m.hours,5);
+ assert.equal(m.floatHours.get('short'),3);
+ assert.equal(m.floatHours.get('long'),0);
+});
+test('both equally long branches can be critical',()=>{
+ const m=processMetrics([s('root',[],1),s('left',['root'],3),s('right',['root'],3),s('join',['left','right'],2)]);
+ assert.deepEqual(m.criticalSteps,['root','left','right','join']);
+ assert.equal(m.hours,6);
+});
