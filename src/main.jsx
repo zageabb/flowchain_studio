@@ -33,7 +33,7 @@ function Diagram({doc,chosen,onChoose,onChooseGroup,lineStyle='solid',zoom=1,sta
  </g>
  <text x={group.x} y={group.labelY} textAnchor="middle" fill="#334E72" fontSize="12" fontWeight="bold">×{group.repeats}</text>
  <path d={svgPointPath(group.points)} fill="none" stroke="transparent" strokeWidth="16"/>
- <title>{group.name+' • '+group.repeats+' repetitions • '+group.members.map(id=>numberById.get(id)).join(', ')+' original numbered steps'}</title>
+ <title>{group.name+' • '+group.repeats+' repetitions • '+group.members.map(id=>numberById.get(id)).join(', ')+' original numbered steps. Passes: '+group.examplePasses}</title>
  </g>)}
  {visible.map(step=>{const p=g.positions.get(step.id);return <g key={step.id} role="button" tabIndex={0} aria-label={'Edit '+step.name} onClick={()=>onChoose(step.id)}
  onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onChoose(step.id)}}} className="node">
