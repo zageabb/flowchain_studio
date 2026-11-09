@@ -3,7 +3,7 @@
 import {graphLayout,graphSegments} from './graph';
 import {processMetrics} from './metrics';
 import {timelineSvg} from './timeline';
-import {collapsedFlow,expandedTimingSteps} from './subprocess';
+import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess';
 
 const xml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const fileName=value=>(value||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
@@ -38,7 +38,7 @@ export function buildInteractiveHtml(project,elkOrders=null,appVersion=''){
  const data=JSON.stringify(project).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
  const today=diagramSvg(project,'today',elkOrders),tomorrow=diagramSvg(project,'tomorrow',elkOrders);
  const timeData=Object.fromEntries(['today','tomorrow'].map(flow=>{
-  const m=processMetrics(expandedTimingSteps(project.flows[flow].steps,project.flows[flow].groups||[]));
+  const m=processMetricsWithGroups(project.flows[flow].steps,project.flows[flow].groups||[]);
   return [flow,{hours:m.hours,workHours:m.totalWorkHours,waitHours:m.totalWaitHours,totalEffortHours:m.totalEffortHours,byStep:Object.fromEntries(m.finish),earlyStart:Object.fromEntries(m.starts),latestStart:Object.fromEntries(m.latestStarts),latestFinish:Object.fromEntries(m.latestFinish),float:Object.fromEntries(m.floatHours),critical:m.criticalSteps}];
  }));
  const timelineToday=timelineSvg(expandedTimingSteps(project.flows.today.steps,project.flows.today.groups||[]),'today'),timelineTomorrow=timelineSvg(expandedTimingSteps(project.flows.tomorrow.steps,project.flows.tomorrow.groups||[]),'tomorrow');
