@@ -33,8 +33,7 @@ export function elkOrderingFromResult(result,steps){
 }
 export async function computeElkOrdering(steps,elkFactory){
  if(!steps.length)return {};
- const Factory=elkFactory||((await import('elkjs/lib/elk.bundled.js')).default);
- const elk=typeof Factory==='function'?new Factory():Factory;
+ const elk=elkFactory?(typeof elkFactory==='function'?elkFactory():elkFactory):new (await import('elkjs/lib/elk.bundled.js')).default();
  const result=await elk.layout(makeElkGraph(steps));
  return elkOrderingFromResult(result,steps);
 }
