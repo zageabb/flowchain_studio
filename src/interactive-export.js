@@ -25,7 +25,7 @@ export function diagramSvg(project,flow,elkOrders=null){
   '<text x="215" y="51" font-size="13" fill="#64748b" font-weight="bold">DEPENDENCY FLOW →</text>'+
   stripes+lines+nodes+'</svg>';
 }
-export function buildInteractiveHtml(project,elkOrders=null){
+export function buildInteractiveHtml(project,elkOrders=null,appVersion=''){
  // JSON is inert inside application/json; escape '<' so it cannot end the script tag.
  const data=JSON.stringify(project).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
  const today=diagramSvg(project,'today',elkOrders),tomorrow=diagramSvg(project,'tomorrow',elkOrders);
@@ -34,15 +34,16 @@ export function buildInteractiveHtml(project,elkOrders=null){
   return [flow,{hours:m.hours,workHours:m.totalWorkHours,waitHours:m.totalWaitHours,totalEffortHours:m.totalEffortHours,byStep:Object.fromEntries(m.finish)}];
  }));
  const timeJson=JSON.stringify(timeData).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
+ const versionLabel=appVersion?'v'+xml(appVersion):'Version not specified';
  const html=String.raw`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FlowChain Studio — Read-only Process Viewer</title>
+<title>FlowChain Studio __APP_VERSION__ — Read-only Process Viewer</title>
 <style>
 :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#24334b;background:#f2f5f9}
 *{box-sizing:border-box}body{margin:0}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 22px;background:white;border-bottom:1px solid #dce4ed}
 h1{font-size:20px;margin:0}header small{color:#738199}button,input{font:inherit;border:1px solid #cbd5e1;border-radius:7px;padding:8px;background:#fff;color:#29384b}button{cursor:pointer}button:focus-visible,.node:focus-visible{outline:3px solid #f19db6}button[aria-pressed=true]{background:#d91a48;color:#fff}button:hover{border-color:#d91a48}main{padding:16px;max-width:1800px;margin:auto}nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.panel{background:white;border:1px solid #dce4ed;border-radius:12px;overflow:hidden;margin-bottom:15px}.panel h2{font-size:15px;margin:0}.timing{margin:0 16px 12px;padding:11px 14px;border:1px solid #d9e3ef;border-radius:8px;background:#f6f9fd;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.timing strong{font-size:20px;color:#c81647;font-variant-numeric:tabular-nums}.timing small{font-size:12px;color:#65748b}.timing .time-bar{flex:1 1 150px;height:7px;background:#e0e6ef;border-radius:9px;overflow:hidden}.timing .time-fill{height:100%;width:0;background:#d91a48;transition:width .12s}.panel-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:12px;flex-wrap:wrap}.viewport{overflow:auto;cursor:grab;max-height:66vh;min-height:220px;background:white}.viewport:active{cursor:grabbing}.flow-svg{display:block;width:100%;height:auto;min-width:650px}.node{cursor:pointer}.node:hover circle,.node.selected circle{fill:#8f1238}.details{padding:18px 20px}.details h3{margin:0 0 8px}.details dl{display:grid;grid-template-columns:140px 1fr;gap:10px;margin:10px 0}.details dt{color:#66768d;font-weight:600}.details dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.step-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.step-list section{background:#fff;border:1px solid #dce4ed;border-radius:12px;padding:16px}.step-list button{display:block;border:0;text-align:left;width:100%;padding:8px}.step-list button:hover{background:#fff1f4}.tooltip{position:fixed;z-index:99;pointer-events:none;background:#24334b;color:white;padding:9px 12px;border-radius:8px;max-width:410px;box-shadow:0 5px 15px #0003;font-size:13px}.tooltip[hidden],[hidden]{display:none!important}footer{padding:15px 20px;color:#718096;font-size:12px}@media(max-width:750px){.step-list{grid-template-columns:1fr}main{padding:10px}}
 </style></head><body>
-<header><div><h1 id="project-title"></h1><small>FlowChain Studio · Interactive read-only export · works offline</small></div>
+<header><div><h1 id="project-title"></h1><small>FlowChain Studio __APP_VERSION__ · Interactive read-only export · works offline</small></div>
 <div><button id="fit">Fit width</button> <button id="minus" aria-label="Zoom out">−</button> <button id="plus" aria-label="Zoom in">+</button> <span id="zoom-label">100%</span></div></header>
 <main><nav><button data-filter="both" aria-pressed="true">Both flows</button><button data-filter="today" aria-pressed="false">TODAY</button><button data-filter="tomorrow" aria-pressed="false">TOMORROW</button> <input id="search" type="search" aria-label="Find a step" placeholder="Find step…"/></nav>
 <section class="panel" data-panel="today"><div class="panel-top"><h2>TODAY</h2><button class="collapse" aria-expanded="true">Minimise ▴</button></div><div class="timing" data-time="today"><span>Elapsed to hovered step</span><strong class="time-readout" aria-live="polite">0 / 0 h</strong><div class="time-bar"><div class="time-fill"></div></div><small class="effort-readout"></small></div><div class="viewport">__TODAY_SVG__</div></section>
@@ -143,10 +144,10 @@ document.querySelectorAll('.viewport').forEach(function(view){
 });
 })();
 </script></body></html>`;
- return html.replace('__PROJECT_DATA__',data).replace('__FLOW_TIMES__',timeJson).replace('__TODAY_SVG__',today).replace('__TOMORROW_SVG__',tomorrow);
+ return html.replaceAll('__APP_VERSION__',versionLabel).replace('__PROJECT_DATA__',data).replace('__FLOW_TIMES__',timeJson).replace('__TODAY_SVG__',today).replace('__TOMORROW_SVG__',tomorrow);
 }
-export function exportInteractiveHtml(project,elkOrders=null){
- const html=buildInteractiveHtml(project,elkOrders);
+export function exportInteractiveHtml(project,elkOrders=null,appVersion=''){
+ const html=buildInteractiveHtml(project,elkOrders,appVersion);
  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
  const a=document.createElement('a');a.href=url;a.download=fileName(project.title)+'-interactive.html';document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
