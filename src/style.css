@@ -84,3 +84,8 @@
 .group-buttons button.danger{color:#ad2448}
 .repeat-connector{cursor:pointer}
 .repeat-connector:focus-visible{outline:2px solid #d91a48}
+
+.analysis-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap}
+.analysis-head-actions span{font-size:11px;color:#718096}
+.analysis-head-actions button{font-size:12px;padding:6px 10px;white-space:nowrap}
+@media(max-width:650px){.analysis-head-actions{gap:6px}.analysis-head-actions span{display:none}}
