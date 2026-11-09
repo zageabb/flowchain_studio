@@ -20,3 +20,15 @@
 .dependency-options label.checked{background:#fff0f4;border-color:#eec0cf}
 .dependency-options input[type=checkbox]{flex:0 0 auto;width:16px;height:16px;accent-color:#d91647;margin:0}
 .dependency-options input:disabled+span{color:#9da6b4}
+
+.editor-toolbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.editor-toolbar button{font-size:12px}
+.comparison-panel{padding-bottom:12px}
+.comparison-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(95px,1fr));gap:10px;padding:18px}
+.comparison-stats>div{border:1px solid #e1e7ef;padding:12px;border-radius:9px;text-align:center}
+.comparison-stats strong{font-size:22px;color:#c91343;display:block}
+.comparison-stats small{font-size:11px;color:#708097}
+.comparison-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));padding:0 18px;gap:12px}
+.comparison-lists>div{background:#f8fafc;border-radius:8px;padding:12px}
+.comparison-lists b{font-size:12px}
+.comparison-lists p{font-size:12px;color:#65748b;line-height:1.5;overflow-wrap:anywhere}
