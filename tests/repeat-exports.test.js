@@ -50,14 +50,30 @@ test('repeat block has one unnumbered timeline row with serial repeated duration
  assert.equal(row.duration,24);
 });
 
-test('zigzag geometry shows the requested repeat count while keeping large counts legible',async()=>{
- const {zigzagPoints,zigzagPath}=await import('../src/repeat-zigzag.js');
- for(const count of [1,2,3,5,12]){
-  const pts=zigzagPoints(200,100,count);
-  assert.equal(pts.length,1+count*2);
-  assert.equal(pts[0].x,155);
-  assert.equal(pts.at(-1).x,245);
-  assert.match(zigzagPath(200,100,count),/^M /);
- }
- assert.equal(zigzagPoints(200,100,1000).length,25);
+test('square-wave repeat connector has full-height vertical runs and stepped horizontal joins',async()=>{
+ const {repeatSquareWavePoints,repeatSquareWavePath,repeatWaveGeometry}=await import('../src/repeat-zigzag.js');
+ const pts=repeatSquareWavePoints(200,100,320,3,{width:90});
+ const tall=pts.slice(1).filter((p,i)=>p.x===pts[i].x&&Math.abs(p.y-pts[i].y)===220);
+ assert.equal(tall.length,3);
+ assert.equal(pts[0].x,155);
+ assert.equal(pts.at(-1).x,245);
+ assert.equal(pts.at(-1).y,320);
+ assert.match(repeatSquareWavePath(200,100,320,3),/^M /);
+ assert.ok(pts.some((p,i)=>i>0&&p.y===pts[i-1].y&&p.x!==pts[i-1].x));
+ assert.ok(repeatSquareWavePoints(200,100,320,1000).length<30);
+ const flow=[{id:'a',dependsOn:[]},{id:'g',isGroup:true,dependsOn:['a'],repeats:3},{id:'b',dependsOn:['g']}];
+ const positions=new Map([['a',{x:100,y:100}],['g',{x:200,y:100}],['b',{x:300,y:320}]]);
+ const geom=repeatWaveGeometry(flow,positions,flow[1]);
+ assert.equal(geom.startY,100);
+ assert.equal(geom.endY,320);
+ assert.equal(geom.links.length,2);
+});
+test('dotted flow has matching dotted square wave, and solid flow has no dashed strokes',()=>{
+ const dotted=structuredClone(project);
+ dotted.flows.today.lineStyle='dotted';
+ const dottedSvg=diagramSvg(dotted,'today');
+ const solidSvg=diagramSvg(project,'today');
+ assert.match(dottedSvg,/stroke-dasharray="2 9"/);
+ assert.match(dottedSvg,/<path[^>]*stroke-dasharray="2 9"/);
+ assert.doesNotMatch(solidSvg,/stroke-dasharray/);
 });
