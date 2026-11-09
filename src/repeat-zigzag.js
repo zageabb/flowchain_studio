@@ -41,3 +41,40 @@ export function repeatWaveGeometry(steps,positions,group,{width=90,maxColumns=12
 export function svgPointPath(points){
  return points.map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
 }
+
+// Render a repeat as an annotation on an EXISTING dependency edge. Source
+// steps remain ordinary numbered nodes; nothing is collapsed or renumbered.
+// Use the first -> last dependency of the selected region when possible.
+export function repeatConnectionAnnotations(steps,groups,positions,{width=84,maxColumns=12}={}){
+ const stepById=new Map(steps.map(s=>[s.id,s]));
+ const annotations=[];
+ for(const group of groups||[]){
+  if(group.collapsed===false||!Array.isArray(group.stepIds)||!group.stepIds.length)continue;
+  const selected=new Set(group.stepIds);
+  const members=steps.filter(s=>selected.has(s.id));
+  if(!members.length)continue;
+  // Prefer the connection between the earliest and latest selected steps.
+  const edges=members.flatMap(to=>(to.dependsOn||[]).filter(from=>selected.has(from)).map(from=>({from,to:to.id})));
+  const edge=edges.find(e=>e.from===members[0].id&&e.to===members.at(-1).id)||edges.at(-1);
+  if(!edge)continue;
+  const a=positions.get(edge.from),b=positions.get(edge.to);
+  if(!a||!b)continue;
+  const left=Math.min(a.x,b.x)+19,right=Math.max(a.x,b.x)-19;
+  const usable=Math.max(8,Math.min(width,right-left));
+  const x=(a.x+b.x)/2;
+  const points=repeatSquareWavePoints(x,a.y,b.y,group.repeats,{width:usable,maxColumns,minHeight:0});
+  const first=points[0],last=points.at(-1);
+  const links=[
+   [{x:a.x,y:a.y},{x:first.x,y:a.y}],
+   [{x:last.x,y:b.y},{x:b.x,y:b.y}]
+  ];
+  annotations.push({id:group.id,name:group.name||'Repeat',repeats:group.repeats,
+   from:edge.from,to:edge.to,points,links,x,labelY:Math.min(a.y,b.y)-15,
+   minY:Math.min(a.y,b.y),maxY:Math.max(a.y,b.y),members:members.map(s=>s.id)});
+ }
+ return annotations;
+}
+export function graphSegmentsWithoutRepeatEdges(steps,positions,annotations,graphSegments){
+ const excluded=new Set(annotations.map(a=>a.from+'|'+a.to));
+ return graphSegments(steps.map(s=>({...s,dependsOn:(s.dependsOn||[]).filter(id=>!excluded.has(id+'|'+s.id))})),positions);
+}
