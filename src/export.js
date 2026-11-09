@@ -4,6 +4,7 @@ import {presentationSummary} from './presentation-summary.js';
 import {processMetrics} from './metrics.js';
 import {stepScreenTip} from './step-export-details.js';
 import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
+import {zigzagPoints,zigzagPath} from './repeat-zigzag.js';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 function geometry(project,flow,elkOrders=null){
@@ -18,7 +19,7 @@ function svgFor(project,flow,elkOrders=null){
  const segments=graphSegments(g.steps,g.positions).map(({x1,y1,x2,y2})=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#d91a48" stroke-width="3" stroke-linecap="round" ${dash}/>`).join('');
  const numbers=new Map(project.flows[flow].steps.map((step,i)=>[step.id,i+1]));
  const nodes=g.steps.map(s=>{const p=g.positions.get(s.id);
-  if(s.isGroup)return `<rect x="${p.x-45}" y="${p.y-21}" width="90" height="42" rx="9" fill="#334e72"/><text x="${p.x}" y="${p.y+5}" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">↻ x${s.repeats}</text>`;
+  if(s.isGroup)return `<rect x="${p.x-49}" y="${p.y-27}" width="98" height="40" fill="white"/><path d="${zigzagPath(p.x,p.y,s.repeats)}" fill="none" stroke="#d91a48" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><text x="${p.x}" y="${p.y-16}" text-anchor="middle" fill="#334e72" font-family="Arial" font-size="12" font-weight="bold">×${s.repeats}</text>`;
   return `<circle cx="${p.x}" cy="${p.y}" r="16" fill="#d91a48" stroke="white" stroke-width="3"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">${numbers.get(s.id)}</text>`}).join('');
  return `<svg xmlns="http://www.w3.org/2000/svg" width="${g.width}" height="${g.height}" viewBox="0 0 ${g.width} ${g.height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="30" font-family="Arial" font-size="20" font-weight="bold" fill="#d91a48">${flow.toUpperCase()}</text><text x="20" y="58" font-family="Arial" font-size="13" fill="#435066">${esc(project.title)} — ${esc(project.subtitle)}</text><text x="20" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPARTMENT</text><text x="215" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPENDENCY FLOW →</text>${rows}${segments}${nodes}</svg>`;
 }
@@ -114,8 +115,16 @@ export async function exportPptx(project,elkOrders=null,appVersion=''){
    if(step.isGroup){
     const tip=step.name+' | Repeats: '+step.repeats+' | '+step.memberCount+' source steps (not duplicated)';
     const link={slide:flow==='today'?1:2,tooltip:tip};
-    slide.addShape(S.roundRect,{x:x-.36,y:y-.16,w:.72,h:.32,rectRadius:.08,fill:{color:'334E72'},line:{color:'FFFFFF',width:1},hyperlink:link});
-    slide.addText('↻ x'+step.repeats,{x:x-.34,y:y-.12,w:.68,h:.22,fontSize:9,color:'FFFFFF',align:'center',bold:true,margin:0,hyperlink:link});
+    const zigzag=zigzagPoints(x,y,step.repeats,{width:.76,amplitude:.11});
+    // Clear the conventional edge behind this connector so the zigzag replaces it.
+    slide.addShape(S.rect,{x:x-.40,y:y-.25,w:.80,h:.39,fill:{color:'FFFFFF'},line:{color:'FFFFFF',transparency:100}});
+    for(let j=1;j<zigzag.length;j++){
+     const a=zigzag[j-1],b=zigzag[j];
+     slide.addShape(S.line,{x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.abs(b.x-a.x),h:Math.abs(b.y-a.y),
+      flipV:(b.x-a.x)*(b.y-a.y)<0,line:{color:'D91A48',width:2.5}});
+    }
+    slide.addText('×'+step.repeats,{x:x-.35,y:y-.27,w:.7,h:.14,fontSize:10,color:'334E72',align:'center',bold:true,margin:0,hyperlink:link});
+    slide.addShape(S.rect,{x:x-.40,y:y-.27,w:.80,h:.41,fill:{color:'FFFFFF',transparency:100},line:{color:'FFFFFF',transparency:100},hyperlink:link});
     return;
    }
    const tip=stepScreenTip(project,flow,step,numbers.get(step.id)-1);
