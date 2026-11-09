@@ -4,7 +4,7 @@ import {graphLayout,graphSegments} from './graph.js';
 import {processMetrics} from './metrics.js';
 import {timelineSvg} from './timeline.js';
 import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
-import {zigzagPath} from './repeat-zigzag.js';
+import {repeatWaveGeometry,svgPointPath} from './repeat-zigzag.js';
 
 const xml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const fileName=value=>(value||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
@@ -17,15 +17,25 @@ export function diagramSvg(project,flow,elkOrders=null){
   '<rect x="6" y="'+g.laneStarts[i]+'" width="'+(g.width-12)+'" height="'+(g.laneHeights[i]-6)+'" rx="6" fill="'+(i%2?'#e8edf3':'#f2f5f9')+'"/>'+
   '<text x="17" y="'+(g.laneStarts[i]+g.laneHeights[i]/2+4)+'" font-size="13" font-weight="bold" fill="#26364a">'+xml(dept.name)+'</text>').join('');
  const dash=project.flows[flow].lineStyle==='dotted'?' stroke-dasharray="2 9"':'';
- const lines=graphSegments(steps,g.positions).map(s=>'<line x1="'+s.x1+'" y1="'+s.y1+'" x2="'+s.x2+'" y2="'+s.y2+'" stroke="#d91a48" stroke-width="3" stroke-linecap="round"'+dash+'/>').join('');
+ const groupIds=new Set(steps.filter(s=>s.isGroup).map(s=>s.id));
+ const normal=steps.filter(s=>!s.isGroup).map(s=>({...s,dependsOn:s.dependsOn.filter(id=>!groupIds.has(id))}));
+ const lines=graphSegments(normal,g.positions).map(s=>'<line x1="'+s.x1+'" y1="'+s.y1+'" x2="'+s.x2+'" y2="'+s.y2+'" stroke="#d91a48" stroke-width="3" stroke-linecap="round"'+dash+'/>').join('');
+ const repeatLines=steps.filter(s=>s.isGroup).map(s=>{
+  const w=repeatWaveGeometry(steps,g.positions,s);
+  const parts=[...w.links,w.points];
+  return parts.map(points=>'<path d="'+svgPointPath(points)+'" stroke="#d91a48" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" fill="none"'+dash+'/>').join('');
+ }).join('');
  const nodes=steps.map((s,i)=>{
   const p=g.positions.get(s.id);
-  if(s.isGroup)return '<g class="node repeat-zigzag" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml(s.name+' repeated '+s.repeats+' times')+'">'+
-   '<rect x="'+(p.x-49)+'" y="'+(p.y-27)+'" width="98" height="40" fill="white"/>'+
-   '<path d="'+zigzagPath(p.x,p.y,s.repeats)+'" stroke="#d91a48" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" fill="none"/>'+
-   '<text x="'+p.x+'" y="'+(p.y-16)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="#334e72">×'+s.repeats+'</text>'+
-   '<rect x="'+(p.x-49)+'" y="'+(p.y-27)+'" width="98" height="40" fill="transparent"/>'+
-   '<title>'+xml(s.name+' repeated '+s.repeats+' times; '+s.memberCount+' original steps')+'</title></g>';
+  if(s.isGroup){
+   const w=repeatWaveGeometry(steps,g.positions,s);
+   const y=Math.min(...w.points.map(point=>point.y));
+   const height=Math.max(...w.points.map(point=>point.y))-y;
+   return '<g class="node repeat-zigzag" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml(s.name+' repeated '+s.repeats+' times')+'">'+
+    '<text x="'+p.x+'" y="'+(y-9)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="#334e72">×'+s.repeats+'</text>'+
+    '<rect x="'+(p.x-49)+'" y="'+y+'" width="98" height="'+Math.max(5,height)+'" fill="transparent"/>'+
+    '<title>'+xml(s.name+' repeated '+s.repeats+' times; '+s.memberCount+' original steps')+'</title></g>';
+  }
   return '<g class="node" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml('Step '+originalNumbers.get(s.id)+': '+s.name)+'">'+
    '<circle cx="'+p.x+'" cy="'+p.y+'" r="17" fill="#d91a48" stroke="#fff" stroke-width="3"/>'+
    '<text x="'+p.x+'" y="'+(p.y+4)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="#fff" pointer-events="none">'+originalNumbers.get(s.id)+'</text>'+
@@ -34,7 +44,7 @@ export function diagramSvg(project,flow,elkOrders=null){
  return '<svg class="flow-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+g.width+' '+g.height+'" data-width="'+g.width+'" data-height="'+g.height+'" aria-label="'+flow.toUpperCase()+' process diagram">'+
   '<text x="17" y="51" font-size="13" fill="#64748b" font-weight="bold">DEPARTMENT</text>'+
   '<text x="215" y="51" font-size="13" fill="#64748b" font-weight="bold">DEPENDENCY FLOW →</text>'+
-  stripes+lines+nodes+'</svg>';
+  stripes+lines+repeatLines+nodes+'</svg>';
 }
 export function buildInteractiveHtml(project,elkOrders=null,appVersion=''){
  // JSON is inert inside application/json; escape '<' so it cannot end the script tag.
