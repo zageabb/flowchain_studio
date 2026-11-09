@@ -11,3 +11,12 @@
 .flow-controls select{width:auto;min-width:100px;padding:6px 9px;font-size:12px}
 .flow-controls button{font-size:12px;min-width:98px;padding:7px 11px}
 @media(max-width:650px){.flow-controls{width:100%;justify-content:flex-start}}
+
+.dependency-editor{border:1px solid #e3eaf2;border-radius:10px;padding:14px;background:#fafbfd}
+.dependency-editor>strong{font-size:13px;color:#29384b}
+.dependency-editor p{color:#748196;font-size:12px;font-weight:400;margin:7px 0 12px}
+.dependency-options{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:7px;max-height:190px;overflow:auto}
+.dependency-options label{display:flex;align-items:center;gap:8px;border:1px solid #e1e7f0;border-radius:8px;background:#fff;padding:8px;font-weight:500;cursor:pointer;line-height:1.35}
+.dependency-options label.checked{background:#fff0f4;border-color:#eec0cf}
+.dependency-options input[type=checkbox]{flex:0 0 auto;width:16px;height:16px;accent-color:#d91647;margin:0}
+.dependency-options input:disabled+span{color:#9da6b4}
