@@ -1,7 +1,7 @@
 // Browser-only export: three separate high-resolution PNGs and editable PowerPoint with a step-list slide.
 import {graphLayout,graphEdges,graphSegments} from './graph';
 import {presentationSummary} from './presentation-summary';
-import {stepExportDetails,stepDetailPages} from './step-export-details';
+import {stepScreenTip} from './step-export-details';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 function geometry(project,flow,elkOrders=null){
@@ -100,8 +100,12 @@ export async function exportPptx(project,elkOrders=null){
   }
   g.steps.forEach((step,i)=>{
    const p=g.positions.get(step.id),x=xMap(p.x),y=yMap(p.y),r=.13;
-   slide.addShape(S.ellipse,{x:x-r,y:y-r,w:2*r,h:2*r,fill:{color:'D91A48'},line:{color:'FFFFFF',width:1.5}});
-   slide.addText(String(i+1),{x:x-r,y:y-r,w:2*r,h:2*r,fontSize:8,color:'FFFFFF',align:'center',valign:'mid',bold:true,margin:0});
+   const tip=stepScreenTip(project,flow,step,i);
+   const link={slide:flow==='today'?1:2,tooltip:tip};
+   // Link each numbered circle to its own slide: hovering shows a ScreenTip,
+   // clicking does not navigate away from the current flow diagram.
+   slide.addShape(S.ellipse,{x:x-r,y:y-r,w:2*r,h:2*r,fill:{color:'D91A48'},line:{color:'FFFFFF',width:1.5},hyperlink:link});
+   slide.addText(String(i+1),{x:x-r,y:y-r,w:2*r,h:2*r,fontSize:8,color:'FFFFFF',align:'center',valign:'mid',bold:true,margin:0,hyperlink:link});
   });
   slide.addText('FlowChain Studio • '+g.steps.length+' steps • '+graphEdges(g.steps,g.positions).length+' dependencies',{x:.3,y:7.12,w:12.5,h:.2,fontSize:9,color:'8591A2',margin:0});
  }
@@ -119,7 +123,7 @@ export async function exportPptx(project,elkOrders=null){
     const number=page*entriesPerColumn+i+1,y=1.35+i*.215;
     if(i%2===0)slide.addShape(S.rect,{x:left-.06,y:y-.01,w:6.15,h:.215,line:{color:'F1F4F8',transparency:100},fill:{color:'F1F4F8'}});
     slide.addText(String(number),{x:left,y,w:.33,h:.18,fontSize:9,bold:true,color:'D91A48',margin:0});
-    slide.addText(String(step.name||'Untitled step'),{x:left+.38,y,w:4.02,h:.18,fontSize:9,color:'29384B',margin:0,breakLine:false});
+    slide.addText(String(step.name||'Untitled step'),{x:left+.38,y,w:4.02,h:.18,fontSize:9,color:'29384B',margin:0,breakLine:false,hyperlink:{slide:flow==='today'?1:2,tooltip:stepScreenTip(project,flow,step,number-1)}});
     const department=project.departments.find(d=>d.id===step.departmentId)?.name||'';
     slide.addText(department,{x:left+4.5,y,w:1.5,h:.18,fontSize:7.5,color:'738096',margin:0,breakLine:false});
    });
@@ -167,47 +171,8 @@ export async function exportPptx(project,elkOrders=null){
   slide.addText('Source: FlowChain Studio • TODAY/TOMORROW data within this presentation',
    {x:.42,y:7.10,w:12.2,h:.2,fontSize:8,color:'8996A7',margin:0});
  }
- // Each category receives a dedicated page when it has material changes.
- // Avoid clipping long step names by using up to 16 entries per page.
- for(const category of summary.changes){
-  if(!category.items.length)continue;
-  const pages=Math.ceil(category.items.length/16);
-  for(let page=0;page<pages;page++){
-   const slide=pptx.addSlide();slide.background={color:'FFFFFF'};
-   slide.addText(category.title+(pages>1?' ('+(page+1)+'/'+pages+')':''),
-    {x:.4,y:.3,w:12.4,h:.48,fontSize:22,bold:true,color:'27384B',margin:0});
-   category.items.slice(page*16,(page+1)*16).forEach((label,i)=>{
-    const y=1.05+i*.37;
-    if(i%2===0)slide.addShape(S.rect,{x:.35,y:y-.025,w:12.6,h:.355,fill:{color:'F4F7FA'},line:{color:'F4F7FA',transparency:100}});
-    slide.addText(String(page*16+i+1),{x:.58,y,w:.45,h:.24,fontSize:11,color:'C81647',bold:true,margin:0});
-    slide.addText(String(label),{x:1.10,y,w:11.45,h:.25,fontSize:12,color:'29384B',margin:0,breakLine:false});
-   });
-   slide.addText('FlowChain Studio • automatic process change analysis',{x:.4,y:7.10,w:12.3,h:.2,fontSize:9,color:'8A95A7',margin:0});
-  }
- }
- // Fully editable step-detail appendix. Every populated field is represented;
- // long descriptions/inputs/outputs continue onto further slides.
- for(const flow of ['today','tomorrow']){
-  for(const [index,step] of project.flows[flow].steps.entries()){
-   const details=stepExportDetails(project,flow,step,index);
-   const pages=stepDetailPages(details,18);
-   pages.forEach((rows,pageIndex)=>{
-    const slide=pptx.addSlide();slide.background={color:'FFFFFF'};
-    slide.addShape(S.rect,{x:0,y:0,w:13.333,h:.12,fill:{color:flow==='today'?'4B596D':'D91A48'},line:{color:flow==='today'?'4B596D':'D91A48',transparency:100}});
-    slide.addText(details.flow+' • Step '+details.number,{x:.46,y:.32,w:4.1,h:.27,fontSize:12,bold:true,color:flow==='today'?'4B596D':'D91A48',margin:0});
-    slide.addText(details.name,{x:.46,y:.73,w:12.3,h:.46,fontSize:20,bold:true,color:'29384B',margin:0,breakLine:false});
-    slide.addText('Step information'+(pages.length>1?' · page '+(pageIndex+1)+' of '+pages.length:''),
-     {x:.46,y:1.35,w:12,h:.3,fontSize:12,color:'6D7E94',margin:0});
-    rows.forEach(({label,value},j)=>{
-     const y=1.82+j*.265;
-     if(j%2===0)slide.addShape(S.rect,{x:.38,y:y-.016,w:12.48,h:.254,fill:{color:'F4F7FA'},line:{color:'F4F7FA',transparency:100}});
-     slide.addText(label,{x:.57,y,w:2.30,h:.225,fontSize:9.4,bold:true,color:'54657B',margin:0,breakLine:false});
-     slide.addText(String(value),{x:2.90,y,w:9.67,h:.225,fontSize:10,color:'26364A',margin:0,breakLine:false});
-    });
-    slide.addText('FlowChain Studio · '+project.title+' · Detailed process record',
-     {x:.45,y:7.12,w:12.2,h:.18,fontSize:8.5,color:'8793A5',margin:0});
-   });
-  }
- }
+ // Step details now live in the PowerPoint ScreenTips attached to
+ // numbered flow circles and numbered list entries, not additional slides.
+ // Keep the executive process-improvement overview; omit all per-step appendices.
  await pptx.writeFile({fileName:safeFile(project.title)+'-today-tomorrow-steps.pptx'});
 }
