@@ -66,6 +66,9 @@ function detailsFor(flow,id){
  clear(details);element('h3',details,flow.toUpperCase()+' · Step '+indexOfStep(flow,id)+' — '+step.name);
  var dl=element('dl',details);
  [['Department',department(step.departmentId)],['Description',step.description||'No description provided'],
+ ['Responsible role',step.owner||'Not specified'],['System',step.system||'Not specified'],['Activity type',step.activityType||'manual'],
+ ['Work / wait',String(Number(step.durationHours)||0)+'h / '+String(Number(step.waitHours)||0)+'h'],
+ ['Inputs',step.inputs||'Not specified'],['Outputs',step.outputs||'Not specified'],
  ['Prerequisites',(step.dependsOn||[]).map(function(pid){var parent=lookup(flow,pid);return parent?indexOfStep(flow,pid)+'. '+parent.name:pid}).join(', ')||'None']]
  .forEach(function(pair){element('dt',dl,pair[0]);element('dd',dl,pair[1])});
  details.scrollIntoView({behavior:'smooth',block:'nearest'});
