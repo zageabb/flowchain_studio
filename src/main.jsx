@@ -8,6 +8,7 @@ import {compareFlows} from './compare.js';
 import {processMetrics} from './metrics.js';
 import {timelineGeometry} from './timeline.js';
 import {collapsedFlow,validateGroupBoundary,normalizeGroups,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
+import {zigzagPath} from './repeat-zigzag.js';
 import {readTemplates,saveTemplate,insertTemplate} from './subprocess-templates.js';
 import {computeProjectElkOrdering} from './elk-layout.js';
 import {listSnapshots,saveSnapshot,deleteSnapshot} from './snapshots.js';
@@ -25,10 +26,10 @@ function Diagram({doc,chosen,onChoose,onChooseGroup,lineStyle='solid',zoom=1,sta
  {doc.departments.map((d,i)=><g key={d.id}><rect x="5" y={g.laneStarts[i]} width={g.width-10} height={g.laneHeights[i]-8} fill={i%2?'#e9eef4':'#f3f6fa'} rx="8"/><text x="17" y={g.laneStarts[i]+g.laneHeights[i]/2+4} fontSize="13" fontWeight="bold" fill="#29384b">{d.name}</text></g>)}
  {segments.map((seg,i)=><line key={i} x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2} stroke="#e01949" strokeWidth="3" strokeDasharray={lineStyle==='dotted'?'2 9':undefined} strokeLinecap="round"/>)}
  {visible.map((step)=>{const p=g.positions.get(step.id);
- return <g key={step.id} role="button" tabIndex={0} aria-label={step.isGroup?'Expand repeated subprocess '+step.name:'Edit '+step.name}
+ return <g key={step.id} role="button" tabIndex={0} aria-label={step.isGroup?'Expand '+step.name+', repeats '+step.repeats+' times':'Edit '+step.name}
  onClick={()=>step.isGroup?onChooseGroup(step.groupId):onChoose(step.id)}
  onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();step.isGroup?onChooseGroup(step.groupId):onChoose(step.id)}}} className="node">
- {step.isGroup?<><rect x={p.x-48} y={p.y-21} width="96" height="42" rx="10" fill="#334e72" stroke="#fff" strokeWidth="2"/><text x={p.x} y={p.y-2} textAnchor="middle" fill="#fff" fontSize="12" fontWeight="bold">↻ ×{step.repeats}</text><text x={p.x} y={p.y+12} textAnchor="middle" fill="#fff" fontSize="9">{step.memberCount} steps</text></>:<><circle cx={p.x} cy={p.y} r={chosen===step.id?20:16} fill={chosen===step.id?'#960d37':statusById[step.id]==='added'?'#19805b':statusById[step.id]==='removed'?'#748499':statusById[step.id]==='changed'?'#d38d16':'#df1949'} stroke="white" strokeWidth="3"/><text x={p.x} y={p.y+4} textAnchor="middle" fill="white" fontSize="11" fontWeight="bold">{originalNumbers.get(step.id)}</text></>}
+ {step.isGroup?<><rect x={p.x-49} y={p.y-27} width="98" height="40" rx="3" fill="#fff"/><path d={zigzagPath(p.x,p.y,step.repeats)} fill="none" stroke="#D91A48" strokeWidth="3.5" strokeLinejoin="round" strokeLinecap="round"/><text x={p.x} y={p.y-16} textAnchor="middle" fill="#334E72" fontSize="12" fontWeight="bold">×{step.repeats}</text><rect x={p.x-49} y={p.y-27} width="98" height="41" fill="transparent" aria-hidden="true"/></>:<><circle cx={p.x} cy={p.y} r={chosen===step.id?20:16} fill={chosen===step.id?'#960d37':statusById[step.id]==='added'?'#19805b':statusById[step.id]==='removed'?'#748499':statusById[step.id]==='changed'?'#d38d16':'#df1949'} stroke="white" strokeWidth="3"/><text x={p.x} y={p.y+4} textAnchor="middle" fill="white" fontSize="11" fontWeight="bold">{originalNumbers.get(step.id)}</text></>}
  <title>{step.isGroup?step.name+' · '+step.memberCount+' steps repeated '+step.repeats+' times (click to expand)':step.name}</title></g>})}
  </svg></div>
 }
