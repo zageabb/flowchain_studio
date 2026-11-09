@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeSteps,assertGraph,graphLayout,graphEdges,graphSegments,mergeOrthogonalSegments,insertStep,removeStep,canDependOn} from '../src/graph.js';
+import {normalizeSteps,assertGraph,graphLayout,graphEdges,graphSegments,mergeOrthogonalSegments,insertStep,removeStep,canDependOn,graphDiagnostics} from '../src/graph.js';
 const deps=(id,dependsOn=[])=>({id,name:id,departmentId:id==='c'?'eng':'scm',dependsOn});
 const lanes=[{id:'scm',name:'SCM'},{id:'eng',name:'Engineering'}];
 test('legacy steps turn into linear dependencies',()=>{
@@ -69,4 +69,13 @@ test('overlapping and touching orthogonal segments merge, gaps and axes stay sep
   {x1:10,y1:30,x2:10,y2:35},
   {x1:0,y1:10,x2:15,y2:10}
  ]);
+});
+
+test('diagnostics flag isolated steps and distinguish split/join nodes',()=>{
+ const steps=[deps('a'),deps('b',['a']),deps('c',['a']),deps('d',['b','c']),deps('isolated')];
+ const out=graphDiagnostics(steps);
+ assert.equal(out.splits,1);
+ assert.equal(out.joins,1);
+ assert.equal(out.isolated,1);
+ assert.ok(out.warnings.some(w=>w.includes('disconnected')));
 });
