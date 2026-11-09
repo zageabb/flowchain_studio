@@ -112,3 +112,12 @@ test('repeat between step 4 and step 5 leaves both step nodes visible in HTML',a
  assert.ok(timing.today.byStep['5']>timing.today.byStep['4']);
  assert.ok(timing.today.byStep['group:g45']>0);
 });
+
+test('the editor passes repeat groups to both sidebar and flow diagram',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const jsx=readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8');
+ assert.match(jsx,/const doc=\{\.\.\.project,steps:project\.flows\[mode\]\.steps,groups:project\.flows\[mode\]\.groups\|\|\[\]\}/);
+ assert.match(jsx,/doc=\{\{\.\.\.project,steps:project\.flows\[flow\]\.steps,groups:project\.flows\[flow\]\.groups\|\|\[\]\}\}/);
+ assert.match(jsx,/REPEAT GROUPS \(/);
+ assert.match(jsx,/Remove repeat group/);
+});
