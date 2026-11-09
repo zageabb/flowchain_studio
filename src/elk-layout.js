@@ -1,7 +1,7 @@
 // ELK.js layered ordering, projected back into FlowChain's fixed department lanes.
 // This preserves department ownership while using ELK to optimise DAG ordering.
 // Import on demand so ordinary diagrams need no ELK runtime cost.
-import {assertGraph} from './graph';
+import {assertGraph} from './graph.js';
 
 export function makeElkGraph(steps){
  assertGraph(steps);
