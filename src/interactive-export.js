@@ -43,7 +43,15 @@ export function buildInteractiveHtml(project,elkOrders=null,appVersion=''){
  const today=diagramSvg(project,'today',elkOrders),tomorrow=diagramSvg(project,'tomorrow',elkOrders);
  const timeData=Object.fromEntries(['today','tomorrow'].map(flow=>{
   const m=processMetricsWithGroups(project.flows[flow].steps,project.flows[flow].groups||[]);
-  return [flow,{hours:m.hours,workHours:m.totalWorkHours,waitHours:m.totalWaitHours,totalEffortHours:m.totalEffortHours,byStep:Object.fromEntries(m.finish),earlyStart:Object.fromEntries(m.starts),latestStart:Object.fromEntries(m.latestStarts),latestFinish:Object.fromEntries(m.latestFinish),float:Object.fromEntries(m.floatHours),critical:m.criticalSteps}];
+  const byStep=Object.fromEntries(m.finish);
+  for(const group of project.flows[flow].groups||[]){
+   const memberPositions=group.stepIds.map(id=>project.flows[flow].steps.findIndex(step=>step.id===id)).filter(i=>i>=0);
+   if(memberPositions.length){
+    const last=project.flows[flow].steps[Math.max(...memberPositions)];
+    byStep['group:'+group.id]=m.finish.get(last.id)||0;
+   }
+  }
+  return [flow,{hours:m.hours,workHours:m.totalWorkHours,waitHours:m.totalWaitHours,totalEffortHours:m.totalEffortHours,byStep,earlyStart:Object.fromEntries(m.starts),latestStart:Object.fromEntries(m.latestStarts),latestFinish:Object.fromEntries(m.latestFinish),float:Object.fromEntries(m.floatHours),critical:m.criticalSteps}];
  }));
  const timelineToday=timelineSvg(expandedTimingSteps(project.flows.today.steps,project.flows.today.groups||[]),'today'),timelineTomorrow=timelineSvg(expandedTimingSteps(project.flows.tomorrow.steps,project.flows.tomorrow.groups||[]),'tomorrow');
  const timeJson=JSON.stringify(timeData).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
