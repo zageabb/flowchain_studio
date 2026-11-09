@@ -68,13 +68,13 @@ export async function exportPng(project,elkOrders=null){
  }
  saveBlob(await pngBlob(stepListCanvas(project)),filename+'-step-list.png');
 }
-export async function exportPptx(project,elkOrders=null){
+export async function exportPptx(project,elkOrders=null,appVersion=''){
  const {default:PptxGenJS}=await import('pptxgenjs');
  const pptx=new PptxGenJS();
  pptx.layout='LAYOUT_WIDE';
  pptx.author='FlowChain Studio';
  pptx.subject='Parallel dependency process flows';
- pptx.title=project.title;
+ pptx.title='FlowChain Studio'+(appVersion?' v'+appVersion:'')+' — '+project.title;
  const S=pptx.ShapeType;
  for(const flow of ['today','tomorrow']){
   const slide=pptx.addSlide(),g=geometry(project,flow,elkOrders);
@@ -112,7 +112,7 @@ export async function exportPptx(project,elkOrders=null){
    slide.addShape(S.ellipse,{x:x-r,y:y-r,w:2*r,h:2*r,fill:{color:'D91A48'},line:{color:'FFFFFF',width:1.5},hyperlink:link});
    slide.addText(String(i+1),{x:x-r,y:y-r,w:2*r,h:2*r,fontSize:8,color:'FFFFFF',align:'center',valign:'mid',bold:true,margin:0,hyperlink:link});
   });
-  slide.addText('FlowChain Studio • '+g.steps.length+' steps • '+graphEdges(g.steps,g.positions).length+' dependencies',{x:.3,y:7.12,w:12.5,h:.2,fontSize:9,color:'8591A2',margin:0});
+  slide.addText('FlowChain Studio'+(appVersion?' v'+appVersion:'')+' • '+g.steps.length+' steps • '+graphEdges(g.steps,g.positions).length+' dependencies',{x:.3,y:7.12,w:12.5,h:.2,fontSize:9,color:'8591A2',margin:0});
  }
  // Third slide: a numbered legend for BOTH diagrams. Numbers are independent by flow.
  // Long processes automatically continue onto additional legend slides.
@@ -175,7 +175,7 @@ export async function exportPptx(project,elkOrders=null){
   slide.addText(duration,{x:.42,y:5.98,w:12.35,h:.35,fontSize:12,bold:true,color:'29384B',margin:0});
   slide.addText('Total work hours add all step effort; elapsed hours follow the longest dependency path, counting parallel branches once.', 
    {x:.42,y:6.43,w:12.25,h:.3,fontSize:10,color:'758398',margin:0});
-  slide.addText('Source: FlowChain Studio • TODAY/TOMORROW data within this presentation',
+  slide.addText('Source: FlowChain Studio'+(appVersion?' v'+appVersion:'')+' • TODAY/TOMORROW data within this presentation',
    {x:.42,y:7.10,w:12.2,h:.2,fontSize:8,color:'8996A7',margin:0});
  }
  // Step details now live in the PowerPoint ScreenTips attached to
