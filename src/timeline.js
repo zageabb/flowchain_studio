@@ -8,7 +8,7 @@ export function timelineGeometry(steps,{labelWidth=205,pixelsPerHour=3,minWidth=
  const rows=steps.map((s,i)=>{
   const start=m.starts.get(s.id)||0,finish=m.finish.get(s.id)||0;
   const duration=Math.max(0,finish-start);
-  return {id:s.id,name:s.name,number:i+1,start,finish,duration,latestStart:m.latestStarts.get(s.id)||0,
+  return {id:s.id,name:s.name,number:s.originalNumber||i+1,isGroup:!!s.isGroup,repeats:s.repeats||1,start,finish,duration,latestStart:m.latestStarts.get(s.id)||0,
    latestFinish:m.latestFinish.get(s.id)||0,float:m.floatHours.get(s.id)||0,critical:m.criticalSteps.includes(s.id),
    x:labelWidth+start*scale,w:Math.max(duration*scale,2),y:top+i*rowHeight};
  });
@@ -27,7 +27,7 @@ export function timelineSvg(steps,flow,opts={}){
  }
  const bars=rows.map(r=>{
   const color=r.critical?'#d91a48':'#7f95ab';
-  const label=r.number+'. '+r.name;
+  const label=r.isGroup?'↻ ×'+r.repeats+' '+r.name:r.number+'. '+r.name;
   return '<g class="timeline-step" role="button" tabindex="0" data-flow="'+escapeSvg(flow)+'" data-id="'+escapeSvg(r.id)+'" aria-label="'+escapeSvg(label)+'">'+
    '<text x="10" y="'+(r.y+14)+'" fill="#28384b" font-size="11">'+escapeSvg(label.length>29?label.slice(0,28)+'…':label)+'</text>'+
    '<rect x="'+r.x+'" y="'+r.y+'" width="'+r.w+'" height="19" rx="4" fill="'+color+'"/>'+
