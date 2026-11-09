@@ -142,3 +142,22 @@ export function graphSegments(steps,positions){
  }
  return mergeOrthogonalSegments(raw);
 }
+
+/** Advisory validation: multiple roots or ends can be legitimate in parallel workflows. */
+export function graphDiagnostics(steps){
+ assertGraph(steps);
+ const incoming=new Map(steps.map(s=>[s.id,s.dependsOn.length]));
+ const outgoing=new Map(steps.map(s=>[s.id,0]));
+ for(const s of steps)for(const id of s.dependsOn)outgoing.set(id,outgoing.get(id)+1);
+ const roots=steps.filter(s=>incoming.get(s.id)===0);
+ const ends=steps.filter(s=>outgoing.get(s.id)===0);
+ const isolated=steps.filter(s=>incoming.get(s.id)===0&&outgoing.get(s.id)===0);
+ const joins=steps.filter(s=>incoming.get(s.id)>1);
+ const splits=steps.filter(s=>outgoing.get(s.id)>1);
+ const warnings=[];
+ if(steps.length&&!roots.length)warnings.push('No starting step detected.');
+ if(roots.length>1)warnings.push(roots.length+' starting steps: confirm these are intentionally independent.');
+ if(ends.length>1)warnings.push(ends.length+' ending steps: confirm every required branch reaches an intended outcome.');
+ if(isolated.length)warnings.push(isolated.length+' disconnected step(s): '+isolated.map(s=>s.name).join(', '));
+ return {roots:roots.length,ends:ends.length,joins:joins.length,splits:splits.length,isolated:isolated.length,warnings};
+}
