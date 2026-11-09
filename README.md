@@ -36,6 +36,16 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary and step-level ScreenTips including work/wait hours, without per-step appendix slides. Very long entries continue onto further slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## v1.12 · Reusable subprocesses and repeated actions
+
+- **+ Group / Repeat steps** in the Steps sidebar creates a named subprocess from a contiguous range of existing step numbers. Enter a repeat count (1–1000). The source activities **are not cloned or renumbered**; their original IDs, descriptions, responsibility, dependencies and other details remain editable.
+- **Collapsed repeat object**: the process diagram shows one dark, unnumbered loop block (↻ ×N) instead of displaying the grouped steps individually. Click the block to expand its original steps. Change the repeat count, rename, expand/collapse or ungroup from the sidebar.
+- **Save template** stores a reusable subprocess in the current browser. **Insert template** appends a copy with fresh step IDs and preserved internal dependencies; new steps are numbered normally and can be edited. Template storage is browser-local, not shared between devices. Export JSON for portable process backups.
+- **HTML, PNG and PowerPoint** use the collapsed repeat object on flow diagrams. HTML retains all original steps in its step list and provides group hover/click details. PowerPoint uses one compact ScreenTip for the repeat block; no additional repeat-detail slides.
+- **Timing**: each repeat is modelled as another serial pass through the group's longest internal dependency path. Total work and waiting hours multiply by the repeat count independently. This is an *estimate*: different durations per repetition, concurrent repetition, rework probability and conditional early exits are not modelled.
+- Grouping refuses a range whose dependencies exit and later re-enter the same group. Each original step can belong to at most one group. The JSON remains version 2, now with optional `flows.today.groups` and `flows.tomorrow.groups` metadata.
+- **Step numbering** remains on the original step records; the collapsed loop is intentionally **unnumbered**. The timeline uses one unnumbered repeat bar when repetitions affect elapsed time.
+
 ## v1.11 · Timeline and critical path analysis
 
 - The application includes a **Show timeline** control with separate TODAY and TOMORROW dependency-based timelines. Each bar starts at the earliest permitted time; bars are red when their total float is zero and slate otherwise. Click or keyboard-select a bar to edit that step.
