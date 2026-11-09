@@ -3,12 +3,12 @@ import {graphLayout,graphEdges,graphSegments} from './graph';
 import {presentationSummary} from './presentation-summary';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
-function geometry(project,flow){
- const g=graphLayout(project.flows[flow].steps,project.departments,{left:215,top:140,lane:76,gap:100});
+function geometry(project,flow,elkOrders=null){
+ const g=graphLayout(project.flows[flow].steps,project.departments,{left:215,top:140,lane:76,gap:100,elkOrder:elkOrders?.[flow]||null});
  return {...g,height:g.height+38};
 }
-function svgFor(project,flow){
- const g=geometry(project,flow);
+function svgFor(project,flow,elkOrders=null){
+ const g=geometry(project,flow,elkOrders);
  const rows=g.departments.map((d,i)=>`<rect x="8" y="${g.laneStarts[i]}" width="${g.width-16}" height="${g.laneHeights[i]-6}" rx="7" fill="${i%2?'#e9eef4':'#f3f6fa'}"/><text x="20" y="${g.laneStarts[i]+g.laneHeights[i]/2+4}" fill="#273747" font-family="Arial" font-weight="bold" font-size="13">${esc(d.name)}</text>`).join('');
  const dash=project.flows[flow].lineStyle==='dotted'?'stroke-dasharray="2 9"':'';
  const segments=graphSegments(g.steps,g.positions).map(({x1,y1,x2,y2})=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#d91a48" stroke-width="3" stroke-linecap="round" ${dash}/>`).join('');
@@ -16,8 +16,8 @@ function svgFor(project,flow){
  return `<svg xmlns="http://www.w3.org/2000/svg" width="${g.width}" height="${g.height}" viewBox="0 0 ${g.width} ${g.height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="30" font-family="Arial" font-size="20" font-weight="bold" fill="#d91a48">${flow.toUpperCase()}</text><text x="20" y="58" font-family="Arial" font-size="13" fill="#435066">${esc(project.title)} — ${esc(project.subtitle)}</text><text x="20" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPARTMENT</text><text x="215" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPENDENCY FLOW →</text>${rows}${segments}${nodes}</svg>`;
 }
 function saveBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-async function rasterize(project,flow,scale){
- const markup=svgFor(project,flow),g=geometry(project,flow);
+async function rasterize(project,flow,scale,elkOrders=null){
+ const markup=svgFor(project,flow,elkOrders),g=geometry(project,flow,elkOrders);
  const url=URL.createObjectURL(new Blob([markup],{type:'image/svg+xml;charset=utf-8'}));
  try{const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error('Could not render SVG'));img.src=url});
  const canvas=document.createElement('canvas');canvas.width=g.width*scale;canvas.height=g.height*scale;
@@ -58,15 +58,15 @@ function stepListCanvas(project){
  });
  return canvas;
 }
-export async function exportPng(project){
+export async function exportPng(project,elkOrders=null){
  const filename=safeFile(project.title);
  // Trigger each download directly; some browsers may request permission for multiple downloads.
  for(const flow of ['today','tomorrow']){
-  saveBlob(await pngBlob(await rasterize(project,flow,2)),filename+'-'+flow+'.png');
+  saveBlob(await pngBlob(await rasterize(project,flow,2,elkOrders)),filename+'-'+flow+'.png');
  }
  saveBlob(await pngBlob(stepListCanvas(project)),filename+'-step-list.png');
 }
-export async function exportPptx(project){
+export async function exportPptx(project,elkOrders=null){
  const {default:PptxGenJS}=await import('pptxgenjs');
  const pptx=new PptxGenJS();
  pptx.layout='LAYOUT_WIDE';
@@ -75,7 +75,7 @@ export async function exportPptx(project){
  pptx.title=project.title;
  const S=pptx.ShapeType;
  for(const flow of ['today','tomorrow']){
-  const slide=pptx.addSlide(),g=geometry(project,flow);
+  const slide=pptx.addSlide(),g=geometry(project,flow,elkOrders);
   slide.background={color:'FFFFFF'};
   slide.addText(flow.toUpperCase()+' — '+project.title,{x:.25,y:.2,w:12.8,h:.48,bold:true,color:flow==='today'?'46556A':'CD1745',fontSize:21,margin:0});
   const horizontal=Math.max(1,Math.max(...Array.from(g.positions.values()).map(p=>p.x))-215);
