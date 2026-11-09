@@ -3,11 +3,14 @@
 import {graphLayout,graphSegments} from './graph';
 import {processMetrics} from './metrics';
 import {timelineSvg} from './timeline';
+import {collapsedFlow,expandedTimingSteps} from './subprocess';
 
 const xml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const fileName=value=>(value||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 export function diagramSvg(project,flow,elkOrders=null){
- const steps=project.flows[flow].steps;
+ const original=project.flows[flow].steps;
+ const steps=collapsedFlow(original,project.flows[flow].groups||[]);
+ const originalNumbers=new Map(original.map((s,i)=>[s.id,i+1]));
  const g=graphLayout(steps,project.departments,{left:215,top:112,lane:80,gap:125,elkOrder:elkOrders?.[flow]||null});
  const stripes=project.departments.map((dept,i)=>
   '<rect x="6" y="'+g.laneStarts[i]+'" width="'+(g.width-12)+'" height="'+(g.laneHeights[i]-6)+'" rx="6" fill="'+(i%2?'#e8edf3':'#f2f5f9')+'"/>'+
@@ -16,9 +19,13 @@ export function diagramSvg(project,flow,elkOrders=null){
  const lines=graphSegments(steps,g.positions).map(s=>'<line x1="'+s.x1+'" y1="'+s.y1+'" x2="'+s.x2+'" y2="'+s.y2+'" stroke="#d91a48" stroke-width="3" stroke-linecap="round"'+dash+'/>').join('');
  const nodes=steps.map((s,i)=>{
   const p=g.positions.get(s.id);
-  return '<g class="node" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml('Step '+(i+1)+': '+s.name)+'">'+
+  if(s.isGroup)return '<g class="node" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml('Repeat block: '+s.name)+'">'+
+   '<rect x="'+(p.x-46)+'" y="'+(p.y-20)+'" width="92" height="40" rx="9" fill="#334e72"/>'+
+   '<text x="'+p.x+'" y="'+(p.y+5)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="white">↻ x'+s.repeats+'</text>'+
+   '<title>'+xml(s.name+' repeated '+s.repeats+' times; '+s.memberCount+' original steps')+'</title></g>';
+  return '<g class="node" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml('Step '+originalNumbers.get(s.id)+': '+s.name)+'">'+
    '<circle cx="'+p.x+'" cy="'+p.y+'" r="17" fill="#d91a48" stroke="#fff" stroke-width="3"/>'+
-   '<text x="'+p.x+'" y="'+(p.y+4)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="#fff" pointer-events="none">'+(i+1)+'</text>'+
+   '<text x="'+p.x+'" y="'+(p.y+4)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="#fff" pointer-events="none">'+originalNumbers.get(s.id)+'</text>'+
    '<title>'+xml(s.name)+'</title></g>';
  }).join('');
  return '<svg class="flow-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+g.width+' '+g.height+'" data-width="'+g.width+'" data-height="'+g.height+'" aria-label="'+flow.toUpperCase()+' process diagram">'+
@@ -31,10 +38,10 @@ export function buildInteractiveHtml(project,elkOrders=null,appVersion=''){
  const data=JSON.stringify(project).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
  const today=diagramSvg(project,'today',elkOrders),tomorrow=diagramSvg(project,'tomorrow',elkOrders);
  const timeData=Object.fromEntries(['today','tomorrow'].map(flow=>{
-  const m=processMetrics(project.flows[flow].steps);
+  const m=processMetrics(expandedTimingSteps(project.flows[flow].steps,project.flows[flow].groups||[]));
   return [flow,{hours:m.hours,workHours:m.totalWorkHours,waitHours:m.totalWaitHours,totalEffortHours:m.totalEffortHours,byStep:Object.fromEntries(m.finish),earlyStart:Object.fromEntries(m.starts),latestStart:Object.fromEntries(m.latestStarts),latestFinish:Object.fromEntries(m.latestFinish),float:Object.fromEntries(m.floatHours),critical:m.criticalSteps}];
  }));
- const timelineToday=timelineSvg(project.flows.today.steps,'today'),timelineTomorrow=timelineSvg(project.flows.tomorrow.steps,'tomorrow');
+ const timelineToday=timelineSvg(expandedTimingSteps(project.flows.today.steps,project.flows.today.groups||[]),'today'),timelineTomorrow=timelineSvg(expandedTimingSteps(project.flows.tomorrow.steps,project.flows.tomorrow.groups||[]),'tomorrow');
  const timeJson=JSON.stringify(timeData).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
  const versionLabel=appVersion?'v'+xml(appVersion):'Version not specified';
  const html=String.raw`<!doctype html>
@@ -68,6 +75,7 @@ var flowList=['today','tomorrow'];
 document.getElementById('project-title').textContent=project.title+(project.subtitle?' — '+project.subtitle:'');
 function department(id){var found=project.departments.find(function(d){return d.id===id});return found?found.name:'Unknown';}
 function lookup(flow,id){return project.flows[flow].steps.find(function(s){return s.id===id});}
+function lookupGroup(flow,id){return (project.flows[flow].groups||[]).find(function(g){return 'group:'+g.id===id});}
 function indexOfStep(flow,id){return project.flows[flow].steps.findIndex(function(s){return s.id===id})+1;}
 function formatHours(value){return value===undefined||value===null||String(value).trim()===''?'Not specified':Number.isFinite(Number(value))&&Number(value)>=0?Number(value)+' h':'Not specified';}
 function formatTotal(work,wait){var w=formatHours(work),t=formatHours(wait);return w==='Not specified'||t==='Not specified'?'Not specified':(Number(work)+Number(wait))+' h';}
@@ -84,10 +92,18 @@ flowList.forEach(function(flow){updateTime(flow,null)});
 function clear(el){while(el.firstChild)el.removeChild(el.firstChild)}
 function element(tag,parent,value){var el=document.createElement(tag);if(value!==undefined)el.textContent=value;parent.appendChild(el);return el}
 function detailsFor(flow,id){
- var step=lookup(flow,id);if(!step)return;
+ var step=lookup(flow,id),group=lookupGroup(flow,id);if(!step&&!group)return;
  updateTime(flow,id);
  document.querySelectorAll('.node, .timeline-step').forEach(function(n){n.classList.toggle('selected',n.dataset.flow===flow&&n.dataset.id===id)});
- clear(details);element('h3',details,flow.toUpperCase()+' · Step '+indexOfStep(flow,id)+' — '+step.name);
+ clear(details);
+ if(group){
+  element('h3',details,flow.toUpperCase()+' · Repeat block — '+group.name);
+  var gd=element('dl',details);
+  var gsteps=project.flows[flow].steps.filter(function(s){return group.stepIds.includes(s.id)});
+  [['Repeats',String(group.repeats)+' times'],['Contains',String(gsteps.length)+' numbered source steps'],['Steps',gsteps.map(function(s){return indexOfStep(flow,s.id)+'. '+s.name}).join(', ')],['Estimated finish',formatHours(timings[flow].byStep[id])]].forEach(function(pair){element('dt',gd,pair[0]);element('dd',gd,pair[1])});
+  details.scrollIntoView({behavior:'smooth',block:'nearest'});return;
+ }
+ element('h3',details,flow.toUpperCase()+' · Step '+indexOfStep(flow,id)+' — '+step.name);
  var dl=element('dl',details);
  [['Department',department(step.departmentId)],['Description',step.description||'No description provided'],
  ['Responsible role',step.owner||'Not specified'],['System / application',step.system||'Not specified'],['Activity type',step.activityType||'Not specified'],
@@ -106,9 +122,9 @@ document.querySelectorAll('.node, .timeline-step').forEach(function(node){
  node.addEventListener('click',function(){openNode(node)});
  node.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openNode(node)}});
  node.addEventListener('pointermove',function(e){
-  var step=lookup(node.dataset.flow,node.dataset.id);if(!step)return;
+  var step=lookup(node.dataset.flow,node.dataset.id),group=lookupGroup(node.dataset.flow,node.dataset.id);if(!step&&!group)return;
   updateTime(node.dataset.flow,node.dataset.id);
-  tooltip.textContent=node.dataset.flow.toUpperCase()+' · '+indexOfStep(node.dataset.flow,node.dataset.id)+'. '+step.name+' — '+department(step.departmentId)+' · Work: '+formatHours(step.durationHours)+' · Wait: '+formatHours(step.waitHours)+' · '+(step.description||'No description');
+  tooltip.textContent=group?(node.dataset.flow.toUpperCase()+' · '+group.name+' · Repeat ×'+group.repeats+' · '+group.stepIds.length+' source steps'):(node.dataset.flow.toUpperCase()+' · '+indexOfStep(node.dataset.flow,node.dataset.id)+'. '+step.name+' — '+department(step.departmentId)+' · Work: '+formatHours(step.durationHours)+' · Wait: '+formatHours(step.waitHours)+' · '+(step.description||'No description'));
   tooltip.hidden=false;
   tooltip.style.left=Math.min(e.clientX+15,window.innerWidth-340)+'px';
   tooltip.style.top=Math.max(5,Math.min(e.clientY+15,window.innerHeight-85))+'px';
