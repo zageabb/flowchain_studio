@@ -33,8 +33,15 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Independently choose **Solid** or **Dotted** connecting lines for TODAY and TOMORROW
 - **Minimise / Expand** each process diagram independently to save screen space; the left-hand step editor stays available
 - Export **three separate high-resolution PNG files**: TODAY diagram, TOMORROW diagram, and a numbered step list covering both flows. The browser may request permission to download multiple files.
-- Export one editable **PPTX** with slide 1 = TODAY, slide 2 = TOMORROW, slide 3 = the numbered step list for both flows, followed by an executive summary and detailed change slides. Very long lists continue on additional slides.
+- Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary, change slides and a complete step-details appendix including work/wait hours. Very long entries continue onto further slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
+
+## Complete HTML and PowerPoint step records (v1.8)
+
+- **Interactive HTML**: hover over a numbered step to see its department, description, estimated work hours and waiting hours. Clicking shows a detailed, searchable record including owner, system/application, activity type, inputs, outputs, work hours, waiting hours, combined work+wait, description and prerequisite steps. Missing values are identified rather than inferred.
+- **PowerPoint**: preserves TODAY and TOMORROW diagrams, numbered legend and process-improvement summary. Adds a detailed, fully editable appendix **for every step in both flows**, retaining the same step numbering. All additional metadata fields and hour estimates are shown separately. Long text is continued onto extra detail slides; it is not silently dropped.
+- Every hour figure is a user-entered estimate. Combined work+wait is an individual step total, **not** elapsed end-to-end workflow duration, especially with parallel paths.
+- All fields are preserved in the JSON project model. Long process documents may produce many PowerPoint appendix slides.
 
 ## Automatic ELK layout (v1.7)
 
