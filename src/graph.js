@@ -153,55 +153,49 @@ export function mergeOrthogonalSegments(segments){
 }
 
 export function graphSegments(steps,positions){
- const raw=[];
  const edges=graphEdges(steps,positions);
- // Connections using the same column gap share a centreline only when they
- // form a real branch or join. Independent branches receive separate tracks.
- // This reduces false-looking joins when two unrelated paths have overlapping
- // vertical runs, while preserving the shared trunks of actual splits/joins.
- const buckets=new Map();
+ const raw=[];
+ // Route every incoming dependency through the last column gap before its
+ // destination. A shortcut such as 1 -> 4 (alongside 1 -> 2 -> 3 -> 4)
+ // runs horizontally past step 3, then joins the same final vertical trunk
+ // used by 3 -> 4. Mid-span elbows can misleadingly look like connections
+ // to intermediate steps.
+ const targetTracks=new Map();
  for(const edge of edges){
-  const key=edge.a.x+'|'+edge.b.x;
-  if(!buckets.has(key))buckets.set(key,[]);
-  buckets.get(key).push(edge);
+  if(!targetTracks.has(edge.target))targetTracks.set(edge.target,[]);
+  targetTracks.get(edge.target).push(edge);
  }
- const channels=new Map();
- for(const [key,group] of buckets){
-  const components=[];
-  for(const edge of group){
-   const joined=components.filter(c=>c.some(e=>e.source===edge.source||e.target===edge.target));
-   if(!joined.length)components.push([edge]);
-   else{
-    const first=joined[0];
-    first.push(edge);
-    for(let i=1;i<joined.length;i++){
-     first.push(...joined[i]);
-     components.splice(components.indexOf(joined[i]),1);
-    }
-   }
-  }
-  // Transitively merge groups because a late edge can bridge components.
-  let changed=true;
-  while(changed){
-   changed=false;
-   outer:for(let i=0;i<components.length;i++)for(let j=i+1;j<components.length;j++){
-    const related=components[i].some(a=>components[j].some(b=>a.source===b.source||a.target===b.target));
-    if(related){components[i].push(...components[j]);components.splice(j,1);changed=true;break outer}
-   }
-  }
-  const gap=group.length?Math.abs(group[0].b.x-group[0].a.x):0;
-  const spacing=Math.min(16,gap/(2*(components.length+1)));
-  components.forEach((component,i)=>{
-   const track=i===0?0:(i%2?-(Math.floor((i+1)/2))*spacing:(i/2)*spacing);
-   component.forEach(edge=>channels.set(edge,track));
-  });
+ const joinX=new Map();
+ for(const [target,incoming] of targetTracks){
+  const endX=incoming[0].b.x;
+  const nearestParentX=Math.max(...incoming.map(e=>e.a.x).filter(x=>x<endX));
+  // Backward/same-column dependencies are rare (but valid); keep an elbow
+  // for those without creating invalid coordinates.
+  joinX.set(target,Number.isFinite(nearestParentX)?(nearestParentX+endX)/2:null);
  }
  for(const edge of edges){
   const {a,b}=edge;
-  const mid=(a.x+b.x)/2+(channels.get(edge)||0);
-  raw.push({x1:a.x,y1:a.y,x2:mid,y2:a.y});
-  raw.push({x1:mid,y1:a.y,x2:mid,y2:b.y});
-  raw.push({x1:mid,y1:b.y,x2:b.x,y2:b.y});
+  const x=joinX.get(edge.target)??(a.x+b.x)/2;
+  // A long dependency may travel across same-department nodes. In that
+  // case lift its horizontal segment above the node centres rather than
+  // drawing a line through an unrelated numbered step.
+  const intervening=steps.some(step=>{
+   if(step.id===edge.source||step.id===edge.target)return false;
+   const p=positions.get(step.id);
+   return p&&p.x>a.x+18&&p.x<x-18&&Math.abs(p.y-a.y)<20;
+  });
+  const transitY=intervening?a.y-28:a.y;
+  if(transitY!==a.y){
+   const departureX=a.x+25;
+   raw.push({x1:a.x,y1:a.y,x2:departureX,y2:a.y});
+   raw.push({x1:departureX,y1:a.y,x2:departureX,y2:transitY});
+   raw.push({x1:departureX,y1:transitY,x2:x,y2:transitY});
+   raw.push({x1:x,y1:transitY,x2:x,y2:b.y});
+  }else{
+   raw.push({x1:a.x,y1:a.y,x2:x,y2:a.y});
+   raw.push({x1:x,y1:a.y,x2:x,y2:b.y});
+  }
+  raw.push({x1:x,y1:b.y,x2:b.x,y2:b.y});
  }
  return mergeOrthogonalSegments(raw);
 }
