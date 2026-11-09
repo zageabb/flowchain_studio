@@ -36,6 +36,14 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary and step-level ScreenTips including work/wait hours, without per-step appendix slides. Very long entries continue onto further slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## v1.12.2 · Full-height square-wave repeat connections
+
+- Repeated steps are visualised as **multiple full-height vertical strokes**, staggered horizontally and joined at alternating top/bottom ends like a square wave, between the preceding and following process steps.
+- The repeat connector uses the **same solid or dotted line style** as its flow. The repeat count appears as **×N** above the connection, with no separate boxed object or step number.
+- Each repetition produces a vertical traversal where space permits; at large repeat counts the view is capped at 12 columns and retains the exact ×N label for readability.
+- Actual dependency links connect to the square-wave endpoints, avoiding the detached miniature zigzag. Live, HTML, PNG and editable PowerPoint diagrams share the geometry. Click the repeat connection in the live editor or offline HTML for the underlying subprocess.
+- The original process structure, repeat-aware estimates and unchanged numbered source steps remain intact.
+
 ## v1.12.1 · Zigzag repeat connector
 
 - Collapsed repeated subprocesses are shown as an **unnumbered zigzag in the connecting line** between the surrounding numbered steps, rather than as a dark boxed node.
