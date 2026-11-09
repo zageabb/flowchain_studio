@@ -4,47 +4,38 @@ import {graphLayout,graphSegments} from './graph.js';
 import {processMetrics} from './metrics.js';
 import {timelineSvg} from './timeline.js';
 import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
-import {repeatWaveGeometry,svgPointPath} from './repeat-zigzag.js';
+import {repeatConnectionAnnotations,graphSegmentsWithoutRepeatEdges,svgPointPath} from './repeat-zigzag.js';
 
 const xml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const fileName=value=>(value||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 export function diagramSvg(project,flow,elkOrders=null){
- const original=project.flows[flow].steps;
- const steps=collapsedFlow(original,project.flows[flow].groups||[]);
- const originalNumbers=new Map(original.map((s,i)=>[s.id,i+1]));
+ const steps=project.flows[flow].steps;
  const g=graphLayout(steps,project.departments,{left:215,top:112,lane:80,gap:125,elkOrder:elkOrders?.[flow]||null});
  const stripes=project.departments.map((dept,i)=>
   '<rect x="6" y="'+g.laneStarts[i]+'" width="'+(g.width-12)+'" height="'+(g.laneHeights[i]-6)+'" rx="6" fill="'+(i%2?'#e8edf3':'#f2f5f9')+'"/>'+
   '<text x="17" y="'+(g.laneStarts[i]+g.laneHeights[i]/2+4)+'" font-size="13" font-weight="bold" fill="#26364a">'+xml(dept.name)+'</text>').join('');
  const dash=project.flows[flow].lineStyle==='dotted'?' stroke-dasharray="2 9"':'';
- const groupIds=new Set(steps.filter(s=>s.isGroup).map(s=>s.id));
- const normal=steps.filter(s=>!s.isGroup).map(s=>({...s,dependsOn:s.dependsOn.filter(id=>!groupIds.has(id))}));
- const lines=graphSegments(normal,g.positions).map(s=>'<line x1="'+s.x1+'" y1="'+s.y1+'" x2="'+s.x2+'" y2="'+s.y2+'" stroke="#d91a48" stroke-width="3" stroke-linecap="round"'+dash+'/>').join('');
- const repeatLines=steps.filter(s=>s.isGroup).map(s=>{
-  const w=repeatWaveGeometry(steps,g.positions,s);
-  const parts=[...w.links,w.points];
-  return parts.map(points=>'<path d="'+svgPointPath(points)+'" stroke="#d91a48" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" fill="none"'+dash+'/>').join('');
+ const repeats=repeatConnectionAnnotations(steps,project.flows[flow].groups||[],g.positions);
+ const lines=graphSegmentsWithoutRepeatEdges(steps,g.positions,repeats,graphSegments).map(s=>'<line x1="'+s.x1+'" y1="'+s.y1+'" x2="'+s.x2+'" y2="'+s.y2+'" stroke="#d91a48" stroke-width="3" stroke-linecap="round"'+dash+'/>').join('');
+ const waveLines=repeats.map(group=>{
+  const paths=[...group.links,group.points].map(pts=>'<path d="'+svgPointPath(pts)+'" fill="none" stroke="#d91a48" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"'+dash+'/>').join('');
+  const waveTitle=group.name+' repeated '+group.repeats+' times • source steps '+group.members.map(id=>steps.findIndex(s=>s.id===id)+1).join(', ');
+  return '<g class="node repeat-zigzag" data-flow="'+flow+'" data-id="'+xml('group:'+group.id)+'" tabindex="0" role="button" aria-label="'+xml(waveTitle)+'">'+
+   paths+'<text x="'+group.x+'" y="'+group.labelY+'" text-anchor="middle" font-size="12" font-weight="bold" fill="#334e72">×'+group.repeats+'</text>'+
+   '<path d="'+svgPointPath(group.points)+'" fill="none" stroke="transparent" stroke-width="16"/>'+
+   '<title>'+xml(waveTitle)+'</title></g>';
  }).join('');
- const nodes=steps.map((s,i)=>{
-  const p=g.positions.get(s.id);
-  if(s.isGroup){
-   const w=repeatWaveGeometry(steps,g.positions,s);
-   const y=Math.min(...w.points.map(point=>point.y));
-   const height=Math.max(...w.points.map(point=>point.y))-y;
-   return '<g class="node repeat-zigzag" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml(s.name+' repeated '+s.repeats+' times')+'">'+
-    '<text x="'+p.x+'" y="'+(y-9)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="#334e72">×'+s.repeats+'</text>'+
-    '<rect x="'+(p.x-49)+'" y="'+y+'" width="98" height="'+Math.max(5,height)+'" fill="transparent"/>'+
-    '<title>'+xml(s.name+' repeated '+s.repeats+' times; '+s.memberCount+' original steps')+'</title></g>';
-  }
-  return '<g class="node" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml('Step '+originalNumbers.get(s.id)+': '+s.name)+'">'+
+ const nodes=steps.map((step,i)=>{
+  const p=g.positions.get(step.id);
+  return '<g class="node" data-flow="'+flow+'" data-id="'+xml(step.id)+'" tabindex="0" role="button" aria-label="'+xml('Step '+(i+1)+': '+step.name)+'">'+
    '<circle cx="'+p.x+'" cy="'+p.y+'" r="17" fill="#d91a48" stroke="#fff" stroke-width="3"/>'+
-   '<text x="'+p.x+'" y="'+(p.y+4)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="#fff" pointer-events="none">'+originalNumbers.get(s.id)+'</text>'+
-   '<title>'+xml(s.name)+'</title></g>';
+   '<text x="'+p.x+'" y="'+(p.y+4)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="#fff" pointer-events="none">'+(i+1)+'</text>'+
+   '<title>'+xml(step.name)+'</title></g>';
  }).join('');
  return '<svg class="flow-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+g.width+' '+g.height+'" data-width="'+g.width+'" data-height="'+g.height+'" aria-label="'+flow.toUpperCase()+' process diagram">'+
   '<text x="17" y="51" font-size="13" fill="#64748b" font-weight="bold">DEPARTMENT</text>'+
   '<text x="215" y="51" font-size="13" fill="#64748b" font-weight="bold">DEPENDENCY FLOW →</text>'+
-  stripes+lines+repeatLines+nodes+'</svg>';
+  stripes+lines+waveLines+nodes+'</svg>';
 }
 export function buildInteractiveHtml(project,elkOrders=null,appVersion=''){
  // JSON is inert inside application/json; escape '<' so it cannot end the script tag.
