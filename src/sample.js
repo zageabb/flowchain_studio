@@ -28,9 +28,9 @@ export function validateProject(data){
  if(data?.flows){
   const today=validateDocument({...data,steps:data.flows.today?.steps||[]});
   const tomorrow=validateDocument({...data,steps:data.flows.tomorrow?.steps||[]});
-  return {version:2,title:today.title,subtitle:today.subtitle,departments:today.departments,flows:{today:{steps:today.steps},tomorrow:{steps:tomorrow.steps}}};
+  return {version:2,title:today.title,subtitle:today.subtitle,departments:today.departments,flows:{today:{steps:today.steps,lineStyle:data.flows.today?.lineStyle==='dotted'?'dotted':'solid'},tomorrow:{steps:tomorrow.steps,lineStyle:data.flows.tomorrow?.lineStyle==='dotted'?'dotted':'solid'}}};
  }
  const old=validateDocument(data);
- return {version:2,title:old.title,subtitle:old.subtitle,departments:old.departments,flows:{today:{steps:old.steps},tomorrow:{steps:structuredClone(old.steps)}}};
+ return {version:2,title:old.title,subtitle:old.subtitle,departments:old.departments,flows:{today:{steps:old.steps,lineStyle:'solid'},tomorrow:{steps:structuredClone(old.steps),lineStyle:'solid'}}};
 }
 export const sampleProject=validateProject(sample);
