@@ -42,9 +42,9 @@ export function collapsedFlow(steps,groups){
  const groupById=new Map(accepted.map(g=>[g.id,g]));
  const original=new Map(steps.map(s=>[s.id,s]));
  const nodes=[],created=new Set();
- for(const s of steps){
+ for(const [originalIndex,s] of steps.entries()){
   const groupId=membership.get(s.id);
-  if(!groupId){nodes.push({...s,dependsOn:[...s.dependsOn]});continue}
+  if(!groupId){nodes.push({...s,originalNumber:originalIndex+1,dependsOn:[...s.dependsOn]});continue}
   if(created.has(groupId))continue;created.add(groupId);
   const g=groupById.get(groupId),members=g.stepIds.map(id=>original.get(id));
   nodes.push({id:'group:'+groupId,name:g.name,departmentId:members[0].departmentId,
