@@ -33,15 +33,23 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Independently choose **Solid** or **Dotted** connecting lines for TODAY and TOMORROW
 - **Minimise / Expand** each process diagram independently to save screen space; the left-hand step editor stays available
 - Export **three separate high-resolution PNG files**: TODAY diagram, TOMORROW diagram, and a numbered step list covering both flows. The browser may request permission to download multiple files.
-- Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary, change slides and a complete step-details appendix including work/wait hours. Very long entries continue onto further slides.
+- Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary and step-level ScreenTips including work/wait hours, without per-step appendix slides. Very long entries continue onto further slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
+
+## PowerPoint ScreenTips instead of step-detail slides (v1.9)
+
+- Each numbered node in the TODAY and TOMORROW diagrams has a native PowerPoint hyperlink ScreenTip. Hover to see a short step summary: title, department, responsible role, system/application, activity type, work hours and waiting hours. Remaining space includes inputs, outputs, description and prerequisites where possible.
+- The hover link targets the same diagram slide so clicking a numbered node does not navigate away. In numbered step lists, linked step names navigate to the relevant flow diagram and show a ScreenTip.
+- **No per-step appendix slides** and no multi-slide lists of individual changes. Keep the two flow diagrams, the numbered step list (which may paginate for larger flows), and the executive comparison overview.
+- Native PowerPoint ScreenTips are compact plain-text tooltips; text may be shortened to fit. Full step information remains in the standalone interactive HTML export and editable JSON source.
+- Some viewers, including browser previews, may not display hyperlink ScreenTips. Test in desktop PowerPoint (especially on Mac) for the desired hover behaviour.
 
 ## Complete HTML and PowerPoint step records (v1.8)
 
 - **Interactive HTML**: hover over a numbered step to see its department, description, estimated work hours and waiting hours. Clicking shows a detailed, searchable record including owner, system/application, activity type, inputs, outputs, work hours, waiting hours, combined work+wait, description and prerequisite steps. Missing values are identified rather than inferred.
-- **PowerPoint**: preserves TODAY and TOMORROW diagrams, numbered legend and process-improvement summary. Adds a detailed, fully editable appendix **for every step in both flows**, retaining the same step numbering. All additional metadata fields and hour estimates are shown separately. Long text is continued onto extra detail slides; it is not silently dropped.
+- **PowerPoint**: preserves TODAY and TOMORROW diagrams, numbered legend and process-improvement summary. Provides compact hover ScreenTips on each numbered flow step and step-list entry instead of per-step appendix slides. Full, unabridged values remain in HTML and JSON.
 - Every hour figure is a user-entered estimate. Combined work+wait is an individual step total, **not** elapsed end-to-end workflow duration, especially with parallel paths.
-- All fields are preserved in the JSON project model. Long process documents may produce many PowerPoint appendix slides.
+- All fields are preserved in the JSON project model. ScreenTips are plain text and may abbreviate lengthy values.
 
 ## Automatic ELK layout (v1.7)
 
