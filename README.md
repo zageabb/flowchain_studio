@@ -13,6 +13,10 @@ React/Vite department swimlane flow editor for modelling workflows such as TAIJU
 - Export one editable **PPTX** with slide 1 = TODAY, slide 2 = TOMORROW, slide 3 = the numbered step list for both flows. Very long lists continue on additional slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## Shared connector drawing
+
+Parallel branches may overlap along an orthogonal trunk (for example, around steps 8–11). FlowChain merges coincident horizontal/vertical connector segments before drawing. This prevents double-weight dotted lines in the browser, exported PNGs, and editable PowerPoint slides without changing the dependency model.
+
 ## Parallel steps and joins
 - Select a step and use **+ Parallel branch** to create a sibling step with the same prerequisites.
 - The **Prerequisites** editor lets you select zero, one or many preceding steps. Multiple steps sharing a prerequisite execute in parallel; a step with two prerequisites joins the branches.
