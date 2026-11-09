@@ -36,6 +36,13 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary and step-level ScreenTips including work/wait hours, without per-step appendix slides. Very long entries continue onto further slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## v1.12.4 · Repeat groups visible and manageable
+
+- **Fixed a live-editor binding bug:** the current flow's group metadata was saved but omitted from the objects passed to the repeat controls and React diagram. The editor now passes each TODAY/TOMORROW flow's `groups` to both components. This is why previously exported HTML could show a repeat while the application showed no square wave or group editor.
+- The Steps sidebar now has a clearly labelled **REPEAT GROUPS (N)** section with every saved group, its original step numbers, editable name and repetition count. **Locate** selects its first step; **Hide wave**/**Show wave** controls the connector annotation; **Remove** asks for confirmation and deletes only the repeat metadata, preserving all original steps and links. **Save template** remains available.
+- The standalone HTML export uses its own renderer. It already renders original numbered steps and a repeat connection with group metadata, and is verified independently. Old downloaded HTML files are snapshots; export a **new** HTML after updating.
+- Repeat annotations are placed only on a real dependency between steps in the selected group. When there is no internal dependency, the group card warns about the missing connection.
+
 ## v1.12.3 · Repeat annotation between original numbered steps
 
 - **Fixed the missing numbered steps**: repeat groups no longer replace steps 4 and 5 (or any other selected steps) in the editor, interactive HTML, PNG or PPTX process diagrams. Every original step circle and its existing number remains visible.
