@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {collapsedFlow,expandedTimingSteps,groupStepDuration,normalizeGroups,validateGroupBoundary} from '../src/subprocess.js';
+import {collapsedFlow,expandedTimingSteps,groupStepDuration,normalizeGroups,validateGroupBoundary,processMetricsWithGroups} from '../src/subprocess.js';
 import {processMetrics} from '../src/metrics.js';
 import {insertTemplate,saveTemplate,readTemplates} from '../src/subprocess-templates.js';
 import {validateProject} from '../src/sample.js';
@@ -56,4 +56,19 @@ test('templates regenerate IDs and preserve internal dependency structure',()=>{
  assert.deepEqual(result.steps[2].dependsOn,['1']);
  assert.equal(result.group.repeats,3);
  assert.equal(result.group.stepIds.length,2);
+});
+
+test('repeat-aware totals keep work and waiting distinct from elapsed duration',()=>{
+ const flow=[
+  {...step('start',[],2),waitHours:1},
+  {...step('review',['start'],3),waitHours:2},
+  {...step('end',['review'],1),waitHours:0}
+ ];
+ const repeated={id:'loop',name:'Review',stepIds:['review'],repeats:4,collapsed:true};
+ const m=processMetricsWithGroups(flow,[repeated]);
+ assert.equal(m.hours,24);
+ assert.equal(m.totalWorkHours,15);
+ assert.equal(m.totalWaitHours,9);
+ assert.equal(m.totalEffortHours,24);
+ assert.equal(m.steps,3);
 });
