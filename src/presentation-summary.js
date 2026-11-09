@@ -2,12 +2,12 @@
 import {compareFlows} from './compare';
 import {processMetrics} from './metrics';
 import {graphDiagnostics} from './graph';
-import {expandedTimingSteps} from './subprocess';
+import {processMetricsWithGroups} from './subprocess';
 
 export function presentationSummary(project){
  const diff=compareFlows(project);
- const today=processMetrics(expandedTimingSteps(project.flows.today.steps,project.flows.today.groups||[]));
- const tomorrow=processMetrics(expandedTimingSteps(project.flows.tomorrow.steps,project.flows.tomorrow.groups||[]));
+ const today=processMetricsWithGroups(project.flows.today.steps,project.flows.today.groups||[]);
+ const tomorrow=processMetricsWithGroups(project.flows.tomorrow.steps,project.flows.tomorrow.groups||[]);
  const diagnostics={
   today:graphDiagnostics(project.flows.today.steps),
   tomorrow:graphDiagnostics(project.flows.tomorrow.steps)
