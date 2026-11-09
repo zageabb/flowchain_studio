@@ -28,7 +28,7 @@ export function compareFlows(project){
   if(before.departmentId!==after.departmentId||todayIndex.get(before.id)!==tomorrowIndex.get(after.id)){
    moved.push({before,after});
   }
-  if(before.name!==after.name||String(before.description||'')!==String(after.description||'')){
+  if(['name','description','owner','system','inputs','outputs','activityType','durationHours','waitHours'].some(k=>String(before[k]??'')!==String(after[k]??''))){
    updated.push({before,after});
   }
   const earlier=(before.dependsOn||[]).map(id=>forward.get(id)||'missing:'+id).sort();
