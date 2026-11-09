@@ -38,3 +38,8 @@
 .snapshot-actions select{width:100%;font-size:12px}
 .snapshot-actions>div{display:flex;gap:5px;flex-wrap:wrap}
 .snapshot-actions button{width:auto!important;flex:1;font-size:11px}
+
+.comparison-legend{display:flex;gap:15px;align-items:center;flex-wrap:wrap;margin:0 18px 14px;color:#6b778a;font-size:12px}
+.comparison-legend span{display:flex;align-items:center;gap:6px}
+.comparison-legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.compare-added{background:#19805b}.compare-removed{background:#748499}.compare-changed{background:#d38d16}
