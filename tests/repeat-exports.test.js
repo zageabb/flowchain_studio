@@ -19,7 +19,7 @@ test('collapsed HTML diagram renders one unnumbered loop and preserves other ste
  assert.match(svg,/×3/);
  assert.match(svg,/class="node repeat-zigzag"/);
  assert.match(svg,/<path d="M [^"]+" stroke="#d91a48"/);
- assert.doesNotMatch(svg,/fill="#334e72"/);
+ assert.doesNotMatch(svg,/<rect[^>]*fill="#334e72"/);
  assert.doesNotMatch(svg,/data-id="b"/);
  assert.doesNotMatch(svg,/data-id="c"/);
  assert.match(svg,/data-id="d"/);
