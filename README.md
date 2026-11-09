@@ -9,8 +9,8 @@ React/Vite department swimlane flow editor for modelling workflows such as TAIJU
 - Diagram nodes show **numbers only**; names and descriptions remain in the editor
 - Independently choose **Solid** or **Dotted** connecting lines for TODAY and TOMORROW
 - **Minimise / Expand** each process diagram independently to save screen space; the left-hand step editor stays available
-- Export combined high-resolution **PNG** with both flows
-- Export editable **PPTX** with one slide per flow and native PowerPoint lines, shapes and labels
+- Export **three separate high-resolution PNG files**: TODAY diagram, TOMORROW diagram, and a numbered step list covering both flows. The browser may request permission to download multiple files.
+- Export one editable **PPTX** with slide 1 = TODAY, slide 2 = TOMORROW, slide 3 = the numbered step list for both flows. Very long lists continue on additional slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
 ## Parallel steps and joins
