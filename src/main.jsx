@@ -7,7 +7,7 @@ import {exportInteractiveHtml} from './interactive-export';
 import {compareFlows} from './compare';
 import {processMetrics} from './metrics';
 import {timelineGeometry} from './timeline';
-import {collapsedFlow,validateGroupBoundary,normalizeGroups,expandedTimingSteps} from './subprocess';
+import {collapsedFlow,validateGroupBoundary,normalizeGroups,expandedTimingSteps,processMetricsWithGroups} from './subprocess';
 import {readTemplates,saveTemplate,insertTemplate} from './subprocess-templates';
 import {computeProjectElkOrdering} from './elk-layout';
 import {listSnapshots,saveSnapshot,deleteSnapshot} from './snapshots';
@@ -50,7 +50,7 @@ function App(){
  const file=useRef(null),drag=useRef(null),history=useRef({undo:[],redo:[]});
  const comparison=compareFlows(project);
  const statusByFlow={today:Object.fromEntries(comparison.removed.map(s=>[s.id,'removed'])),tomorrow:Object.fromEntries([...comparison.moved,...comparison.updated,...comparison.dependencyChanged].map(x=>[x.after.id,'changed']).concat(comparison.added.map(s=>[s.id,'added'])))};
- const metrics={today:processMetrics(expandedTimingSteps(project.flows.today.steps,project.flows.today.groups||[])),tomorrow:processMetrics(expandedTimingSteps(project.flows.tomorrow.steps,project.flows.tomorrow.groups||[]))};
+ const metrics={today:processMetricsWithGroups(project.flows.today.steps,project.flows.today.groups||[]),tomorrow:processMetricsWithGroups(project.flows.tomorrow.steps,project.flows.tomorrow.groups||[])};
  const diagnostics={today:graphDiagnostics(project.flows.today.steps),tomorrow:graphDiagnostics(project.flows.tomorrow.steps)};
  useEffect(()=>{localStorage.setItem('flowchain-v2',JSON.stringify(project))},[project]);
  useEffect(()=>{
