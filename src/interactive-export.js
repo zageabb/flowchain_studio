@@ -34,7 +34,7 @@ export function buildInteractiveHtml(project,elkOrders=null){
 <style>
 :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#24334b;background:#f2f5f9}
 *{box-sizing:border-box}body{margin:0}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 22px;background:white;border-bottom:1px solid #dce4ed}
-h1{font-size:20px;margin:0}header small{color:#738199}button,input{font:inherit;border:1px solid #cbd5e1;border-radius:7px;padding:8px;background:#fff;color:#29384b}button{cursor:pointer}button:focus-visible,.node:focus-visible{outline:3px solid #f19db6}button[aria-pressed=true]{background:#d91a48;color:#fff}button:hover{border-color:#d91a48}main{padding:16px;max-width:1800px;margin:auto}nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.panel{background:white;border:1px solid #dce4ed;border-radius:12px;overflow:hidden;margin-bottom:15px}.panel h2{font-size:15px;margin:0}.panel-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:12px;flex-wrap:wrap}.viewport{overflow:auto;cursor:grab;max-height:66vh;min-height:220px;background:white}.viewport:active{cursor:grabbing}.flow-svg{display:block;width:100%;height:auto;min-width:650px}.node{cursor:pointer}.node:hover circle,.node.selected circle{fill:#8f1238}.details{padding:18px 20px}.details h3{margin:0 0 8px}.details dl{display:grid;grid-template-columns:140px 1fr;gap:10px;margin:10px 0}.details dt{color:#66768d;font-weight:600}.details dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.step-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.step-list section{background:#fff;border:1px solid #dce4ed;border-radius:12px;padding:16px}.step-list button{display:block;border:0;text-align:left;width:100%;padding:8px}.step-list button:hover{background:#fff1f4}.tooltip{position:fixed;z-index:99;pointer-events:none;background:#24334b;color:white;padding:9px 12px;border-radius:8px;max-width:320px;box-shadow:0 5px 15px #0003;font-size:13px}.tooltip[hidden],[hidden]{display:none!important}footer{padding:15px 20px;color:#718096;font-size:12px}@media(max-width:750px){.step-list{grid-template-columns:1fr}main{padding:10px}}
+h1{font-size:20px;margin:0}header small{color:#738199}button,input{font:inherit;border:1px solid #cbd5e1;border-radius:7px;padding:8px;background:#fff;color:#29384b}button{cursor:pointer}button:focus-visible,.node:focus-visible{outline:3px solid #f19db6}button[aria-pressed=true]{background:#d91a48;color:#fff}button:hover{border-color:#d91a48}main{padding:16px;max-width:1800px;margin:auto}nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.panel{background:white;border:1px solid #dce4ed;border-radius:12px;overflow:hidden;margin-bottom:15px}.panel h2{font-size:15px;margin:0}.panel-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;gap:12px;flex-wrap:wrap}.viewport{overflow:auto;cursor:grab;max-height:66vh;min-height:220px;background:white}.viewport:active{cursor:grabbing}.flow-svg{display:block;width:100%;height:auto;min-width:650px}.node{cursor:pointer}.node:hover circle,.node.selected circle{fill:#8f1238}.details{padding:18px 20px}.details h3{margin:0 0 8px}.details dl{display:grid;grid-template-columns:140px 1fr;gap:10px;margin:10px 0}.details dt{color:#66768d;font-weight:600}.details dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.step-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.step-list section{background:#fff;border:1px solid #dce4ed;border-radius:12px;padding:16px}.step-list button{display:block;border:0;text-align:left;width:100%;padding:8px}.step-list button:hover{background:#fff1f4}.tooltip{position:fixed;z-index:99;pointer-events:none;background:#24334b;color:white;padding:9px 12px;border-radius:8px;max-width:410px;box-shadow:0 5px 15px #0003;font-size:13px}.tooltip[hidden],[hidden]{display:none!important}footer{padding:15px 20px;color:#718096;font-size:12px}@media(max-width:750px){.step-list{grid-template-columns:1fr}main{padding:10px}}
 </style></head><body>
 <header><div><h1 id="project-title"></h1><small>FlowChain Studio · Interactive read-only export · works offline</small></div>
 <div><button id="fit">Fit width</button> <button id="minus" aria-label="Zoom out">−</button> <button id="plus" aria-label="Zoom in">+</button> <span id="zoom-label">100%</span></div></header>
@@ -58,6 +58,9 @@ document.getElementById('project-title').textContent=project.title+(project.subt
 function department(id){var found=project.departments.find(function(d){return d.id===id});return found?found.name:'Unknown';}
 function lookup(flow,id){return project.flows[flow].steps.find(function(s){return s.id===id});}
 function indexOfStep(flow,id){return project.flows[flow].steps.findIndex(function(s){return s.id===id})+1;}
+function formatHours(value){return value===undefined||value===null||String(value).trim()===''?'Not specified':Number.isFinite(Number(value))&&Number(value)>=0?Number(value)+' h':'Not specified';}
+function formatTotal(work,wait){var w=formatHours(work),t=formatHours(wait);return w==='Not specified'||t==='Not specified'?'Not specified':(Number(work)+Number(wait))+' h';}
+
 function clear(el){while(el.firstChild)el.removeChild(el.firstChild)}
 function element(tag,parent,value){var el=document.createElement(tag);if(value!==undefined)el.textContent=value;parent.appendChild(el);return el}
 function detailsFor(flow,id){
@@ -66,8 +69,9 @@ function detailsFor(flow,id){
  clear(details);element('h3',details,flow.toUpperCase()+' · Step '+indexOfStep(flow,id)+' — '+step.name);
  var dl=element('dl',details);
  [['Department',department(step.departmentId)],['Description',step.description||'No description provided'],
- ['Responsible role',step.owner||'Not specified'],['System',step.system||'Not specified'],['Activity type',step.activityType||'manual'],
- ['Work / wait',String(Number(step.durationHours)||0)+'h / '+String(Number(step.waitHours)||0)+'h'],
+ ['Responsible role',step.owner||'Not specified'],['System / application',step.system||'Not specified'],['Activity type',step.activityType||'Not specified'],
+ ['Work hours',formatHours(step.durationHours)],['Waiting hours',formatHours(step.waitHours)],
+ ['Combined work + wait',formatTotal(step.durationHours,step.waitHours)],
  ['Inputs',step.inputs||'Not specified'],['Outputs',step.outputs||'Not specified'],
  ['Prerequisites',(step.dependsOn||[]).map(function(pid){var parent=lookup(flow,pid);return parent?indexOfStep(flow,pid)+'. '+parent.name:pid}).join(', ')||'None']]
  .forEach(function(pair){element('dt',dl,pair[0]);element('dd',dl,pair[1])});
@@ -79,7 +83,7 @@ document.querySelectorAll('.node').forEach(function(node){
  node.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openNode(node)}});
  node.addEventListener('pointermove',function(e){
   var step=lookup(node.dataset.flow,node.dataset.id);if(!step)return;
-  tooltip.textContent=node.dataset.flow.toUpperCase()+' · '+indexOfStep(node.dataset.flow,node.dataset.id)+'. '+step.name+' — '+(step.description||department(step.departmentId));
+  tooltip.textContent=node.dataset.flow.toUpperCase()+' · '+indexOfStep(node.dataset.flow,node.dataset.id)+'. '+step.name+' — '+department(step.departmentId)+' · Work: '+formatHours(step.durationHours)+' · Wait: '+formatHours(step.waitHours)+' · '+(step.description||'No description');
   tooltip.hidden=false;
   tooltip.style.left=Math.min(e.clientX+15,window.innerWidth-340)+'px';
   tooltip.style.top=Math.max(5,Math.min(e.clientY+15,window.innerHeight-85))+'px';
@@ -89,7 +93,7 @@ document.querySelectorAll('.node').forEach(function(node){
 var list=document.getElementById('step-lists');
 flowList.forEach(function(flow){var section=element('section',list);section.dataset.list=flow;element('h3',section,flow.toUpperCase()+' step list');
  project.flows[flow].steps.forEach(function(step,i){
-  var btn=element('button',section,(i+1)+'. '+step.name+' · '+department(step.departmentId));
+  var btn=element('button',section,(i+1)+'. '+step.name+' · '+department(step.departmentId)+' · Work '+formatHours(step.durationHours)+' · Wait '+formatHours(step.waitHours));
   btn.dataset.name=step.name.toLowerCase();btn.addEventListener('click',function(){detailsFor(flow,step.id)});
  });
 });
