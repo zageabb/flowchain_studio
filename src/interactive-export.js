@@ -4,6 +4,7 @@ import {graphLayout,graphSegments} from './graph.js';
 import {processMetrics} from './metrics.js';
 import {timelineSvg} from './timeline.js';
 import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
+import {zigzagPath} from './repeat-zigzag.js';
 
 const xml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const fileName=value=>(value||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
@@ -19,9 +20,11 @@ export function diagramSvg(project,flow,elkOrders=null){
  const lines=graphSegments(steps,g.positions).map(s=>'<line x1="'+s.x1+'" y1="'+s.y1+'" x2="'+s.x2+'" y2="'+s.y2+'" stroke="#d91a48" stroke-width="3" stroke-linecap="round"'+dash+'/>').join('');
  const nodes=steps.map((s,i)=>{
   const p=g.positions.get(s.id);
-  if(s.isGroup)return '<g class="node" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml('Repeat block: '+s.name)+'">'+
-   '<rect x="'+(p.x-46)+'" y="'+(p.y-20)+'" width="92" height="40" rx="9" fill="#334e72"/>'+
-   '<text x="'+p.x+'" y="'+(p.y+5)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="white">↻ x'+s.repeats+'</text>'+
+  if(s.isGroup)return '<g class="node repeat-zigzag" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml(s.name+' repeated '+s.repeats+' times')+'">'+
+   '<rect x="'+(p.x-49)+'" y="'+(p.y-27)+'" width="98" height="40" fill="white"/>'+
+   '<path d="'+zigzagPath(p.x,p.y,s.repeats)+'" stroke="#d91a48" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round" fill="none"/>'+
+   '<text x="'+p.x+'" y="'+(p.y-16)+'" text-anchor="middle" font-weight="bold" font-size="12" fill="#334e72">×'+s.repeats+'</text>'+
+   '<rect x="'+(p.x-49)+'" y="'+(p.y-27)+'" width="98" height="40" fill="transparent"/>'+
    '<title>'+xml(s.name+' repeated '+s.repeats+' times; '+s.memberCount+' original steps')+'</title></g>';
   return '<g class="node" data-flow="'+flow+'" data-id="'+xml(s.id)+'" tabindex="0" role="button" aria-label="'+xml('Step '+originalNumbers.get(s.id)+': '+s.name)+'">'+
    '<circle cx="'+p.x+'" cy="'+p.y+'" r="17" fill="#d91a48" stroke="#fff" stroke-width="3"/>'+
