@@ -1,4 +1,4 @@
-import {processMetrics} from './metrics';
+import {processMetrics} from './metrics.js';
 // Reusable subprocess groups (metadata only) and an acyclic collapsed graph.
 // A repeated group remains ONE set of numbered activities in the source.
 // Repeats specify how often that same action/set occurs; no duplicated nodes.
