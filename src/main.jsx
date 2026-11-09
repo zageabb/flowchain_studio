@@ -8,7 +8,7 @@ import {compareFlows} from './compare.js';
 import {processMetrics} from './metrics.js';
 import {timelineGeometry} from './timeline.js';
 import {collapsedFlow,validateGroupBoundary,normalizeGroups,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
-import {repeatWaveGeometry,svgPointPath} from './repeat-zigzag.js';
+import {repeatConnectionAnnotations,graphSegmentsWithoutRepeatEdges,svgPointPath} from './repeat-zigzag.js';
 import {readTemplates,saveTemplate,insertTemplate} from './subprocess-templates.js';
 import {computeProjectElkOrdering} from './elk-layout.js';
 import {listSnapshots,saveSnapshot,deleteSnapshot} from './snapshots.js';
@@ -17,27 +17,28 @@ import './style.css';
 const copy=x=>structuredClone(x);
 function load(){try{const data=localStorage.getItem('flowchain-v2')||localStorage.getItem('flowchain-v1');return data?validateProject(JSON.parse(data)):copy(sampleProject)}catch{return copy(sampleProject)}}
 function Diagram({doc,chosen,onChoose,onChooseGroup,lineStyle='solid',zoom=1,statusById={},elkOrder=null}){
- const visible=collapsedFlow(doc.steps,doc.groups||[]);
+ const visible=doc.steps;
  const g=graphLayout(visible,doc.departments,{elkOrder});
- const groupIds=new Set(visible.filter(s=>s.isGroup).map(s=>s.id));
- const regular=visible.filter(s=>!s.isGroup).map(s=>({...s,dependsOn:s.dependsOn.filter(id=>!groupIds.has(id))}));
- const segments=graphSegments(regular,g.positions);
- const repeats=visible.filter(s=>s.isGroup).map(s=>({...s,wave:repeatWaveGeometry(visible,g.positions,s)}));
- const originalNumbers=new Map(doc.steps.map((step,i)=>[step.id,i+1]));
+ const repeats=repeatConnectionAnnotations(visible,doc.groups||[],g.positions);
+ const segments=graphSegmentsWithoutRepeatEdges(visible,g.positions,repeats,graphSegments);
+ const numberById=new Map(visible.map((step,i)=>[step.id,i+1]));
  return <div className="diagram-scroll"><svg viewBox={`0 0 ${g.width} ${g.height}`} width={zoom==="fit"?"100%":g.width*zoom} height={zoom==="fit"?undefined:g.height*zoom} aria-label="Interactive parallel process swimlane diagram" role="img">
  <text x="18" y="45" fontSize="12" fontWeight="bold" fill="#66758b">DEPARTMENT</text><text x="210" y="45" fontSize="12" fontWeight="bold" fill="#66758b">DEPENDENCY FLOW →</text>
  {doc.departments.map((d,i)=><g key={d.id}><rect x="5" y={g.laneStarts[i]} width={g.width-10} height={g.laneHeights[i]-8} fill={i%2?'#e9eef4':'#f3f6fa'} rx="8"/><text x="17" y={g.laneStarts[i]+g.laneHeights[i]/2+4} fontSize="13" fontWeight="bold" fill="#29384b">{d.name}</text></g>)}
  {segments.map((seg,i)=><line key={i} x1={seg.x1} y1={seg.y1} x2={seg.x2} y2={seg.y2} stroke="#e01949" strokeWidth="3" strokeDasharray={lineStyle==='dotted'?'2 9':undefined} strokeLinecap="round"/>)}
- {repeats.map(s=><g key={'repeat-lines-'+s.id} fill="none" stroke="#e01949" strokeWidth="3" strokeDasharray={lineStyle==='dotted'?'2 9':undefined} strokeLinejoin="round" strokeLinecap="round">
-  {s.wave.links.map((points,i)=><path key={i} d={svgPointPath(points)}/>)}
-  <path d={svgPointPath(s.wave.points)}/>
+ {repeats.map(group=><g key={'repeat-'+group.id} className="repeat-connector" role="button" tabIndex={0} aria-label={group.name+', '+group.repeats+' repetitions'} onClick={()=>onChooseGroup(group.id)}
+ onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onChooseGroup(group.id)}}}>
+ <g fill="none" stroke="#e01949" strokeWidth="3" strokeDasharray={lineStyle==='dotted'?'2 9':undefined} strokeLinejoin="round" strokeLinecap="round">
+ {[...group.links,group.points].map((points,i)=><path key={i} d={svgPointPath(points)}/>)}
+ </g>
+ <text x={group.x} y={group.labelY} textAnchor="middle" fill="#334E72" fontSize="12" fontWeight="bold">×{group.repeats}</text>
+ <path d={svgPointPath(group.points)} fill="none" stroke="transparent" strokeWidth="16"/>
+ <title>{group.name+' • '+group.repeats+' repetitions • '+group.members.map(id=>numberById.get(id)).join(', ')+' original numbered steps'}</title>
  </g>)}
- {visible.map((step)=>{const p=g.positions.get(step.id);
- return <g key={step.id} role="button" tabIndex={0} aria-label={step.isGroup?'Expand '+step.name+', repeats '+step.repeats+' times':'Edit '+step.name}
- onClick={()=>step.isGroup?onChooseGroup(step.groupId):onChoose(step.id)}
- onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();step.isGroup?onChooseGroup(step.groupId):onChoose(step.id)}}} className="node">
- {step.isGroup?<><rect x={p.x-49} y={Math.min(...repeats.find(r=>r.id===step.id).wave.points.map(p=>p.y))-22} width="98" height="20" fill="#fff" opacity=".96"/><text x={p.x} y={Math.min(...repeats.find(r=>r.id===step.id).wave.points.map(p=>p.y))-7} textAnchor="middle" fill="#334E72" fontSize="12" fontWeight="bold">×{step.repeats}</text><rect x={p.x-49} y={Math.min(...repeats.find(r=>r.id===step.id).wave.points.map(p=>p.y))} width="98" height={Math.max(...repeats.find(r=>r.id===step.id).wave.points.map(p=>p.y))-Math.min(...repeats.find(r=>r.id===step.id).wave.points.map(p=>p.y))} fill="transparent" aria-hidden="true"/></>:<><circle cx={p.x} cy={p.y} r={chosen===step.id?20:16} fill={chosen===step.id?'#960d37':statusById[step.id]==='added'?'#19805b':statusById[step.id]==='removed'?'#748499':statusById[step.id]==='changed'?'#d38d16':'#df1949'} stroke="white" strokeWidth="3"/><text x={p.x} y={p.y+4} textAnchor="middle" fill="white" fontSize="11" fontWeight="bold">{originalNumbers.get(step.id)}</text></>}
- <title>{step.isGroup?step.name+' · '+step.memberCount+' steps repeated '+step.repeats+' times (click to expand)':step.name}</title></g>})}
+ {visible.map(step=>{const p=g.positions.get(step.id);return <g key={step.id} role="button" tabIndex={0} aria-label={'Edit '+step.name} onClick={()=>onChoose(step.id)}
+ onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onChoose(step.id)}}} className="node">
+ <circle cx={p.x} cy={p.y} r={chosen===step.id?20:16} fill={chosen===step.id?'#960d37':statusById[step.id]==='added'?'#19805b':statusById[step.id]==='removed'?'#748499':statusById[step.id]==='changed'?'#d38d16':'#df1949'} stroke="white" strokeWidth="3"/>
+ <text x={p.x} y={p.y+4} textAnchor="middle" fill="white" fontSize="11" fontWeight="bold">{numberById.get(step.id)}</text><title>{step.name}</title></g>})}
  </svg></div>
 }
 function Timeline({steps,flow,onChoose}){
