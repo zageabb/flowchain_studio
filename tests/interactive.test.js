@@ -60,3 +60,10 @@ test('interactive HTML embeds cumulative path timing and per-flow progress bars'
  assert.match(html,/updateTime\(node.dataset.flow,node.dataset.id\)/);
  assert.match(html,/time-readout/);
 });
+
+test('HTML export title and heading identify the specific application version',()=>{
+ const html=buildInteractiveHtml(project,null,'1.10.0');
+ assert.match(html,/<title>FlowChain Studio v1\.10\.0 — Read-only Process Viewer<\/title>/);
+ assert.match(html,/FlowChain Studio v1\.10\.0 · Interactive read-only export/);
+ assert.doesNotMatch(html,/__APP_VERSION__/);
+});
