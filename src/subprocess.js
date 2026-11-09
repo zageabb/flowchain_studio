@@ -1,3 +1,4 @@
+import {processMetrics} from './metrics';
 // Reusable subprocess groups (metadata only) and an acyclic collapsed graph.
 // A repeated group remains ONE set of numbered activities in the source.
 // Repeats specify how often that same action/set occurs; no duplicated nodes.
@@ -101,4 +102,28 @@ export function expandedTimingSteps(steps,groups){
   }
   return node;
  });
+}
+
+/**
+ * Repeat-aware process totals. Groups are serial repetitions of one source
+ * region, never cloned steps. Elapsed time uses its critical dependency path;
+ * work and wait are accumulated independently across ALL repetitions.
+ */
+export function processMetricsWithGroups(steps,groups=[]){
+ const base=processMetrics(steps);
+ const projected=expandedTimingSteps(steps,groups);
+ const m=projected===steps?base:processMetrics(projected);
+ const byId=new Map(steps.map(s=>[s.id,s]));
+ let work=base.totalWorkHours,wait=base.totalWaitHours;
+ for(const group of normalizeGroups(groups,steps)){
+  try{validateGroupBoundary(steps,group.stepIds)}catch{continue}
+  const extra=group.repeats-1;if(extra<=0)continue;
+  for(const id of group.stepIds){
+   const s=byId.get(id);
+   work+=extra*Math.max(0,Number(s.durationHours)||0);
+   wait+=extra*Math.max(0,Number(s.waitHours)||0);
+  }
+ }
+ return {...m,steps:base.steps,manual:base.manual,automated:base.automated,assisted:base.assisted,
+  totalWorkHours:work,totalWaitHours:wait,totalEffortHours:work+wait};
 }
