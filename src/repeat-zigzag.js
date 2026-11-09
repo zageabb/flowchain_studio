@@ -18,6 +18,7 @@ export function repeatSquareWavePoints(x,startY,endY,repeats,{width=90,maxColumn
   points.push({x:columnX,y:exit});
  }
  if(points.at(-1).y!==endY)points.push({x:points.at(-1).x,y:endY});
+ if(points.at(-1).x!==right)points.push({x:right,y:endY});
  return points;
 }
 export function repeatSquareWavePath(x,startY,endY,repeats,opts){
