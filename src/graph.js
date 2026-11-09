@@ -91,3 +91,54 @@ export function edgePath(a,b){
  const mid=(a.x+b.x)/2;
  return 'M '+a.x+' '+a.y+' H '+mid+' V '+b.y+' H '+b.x;
 }
+
+/**
+ * Convert dependency elbows into a unique set of axis-aligned strokes.
+ * Branches commonly reuse a trunk (e.g. steps 8/9/10 -> 11); drawing that
+ * trunk for each edge makes dotted paths appear heavier and misaligned.
+ * Merge overlapping and touching collinear intervals before rendering.
+ */
+export function mergeOrthogonalSegments(segments){
+ const groups=new Map();
+ const precision=1e6;
+ for(const segment of segments){
+  const {x1,y1,x2,y2}=segment;
+  if(![x1,y1,x2,y2].every(Number.isFinite))throw Error('Invalid connector coordinates.');
+  const vertical=Math.abs(x1-x2)<1/precision;
+  const horizontal=Math.abs(y1-y2)<1/precision;
+  if(!vertical&&!horizontal)throw Error('Connector segments must be orthogonal.');
+  const fixed=Math.round((vertical?x1:y1)*precision)/precision;
+  const start=Math.min(vertical?y1:x1,vertical?y2:x2);
+  const end=Math.max(vertical?y1:x1,vertical?y2:x2);
+  if(end-start<1/precision)continue;
+  const key=(vertical?'v:':'h:')+fixed;
+  if(!groups.has(key))groups.set(key,{vertical,fixed,ranges:[]});
+  groups.get(key).ranges.push([start,end]);
+ }
+ const merged=[];
+ for(const {vertical,fixed,ranges} of groups.values()){
+  ranges.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  let [start,end]=ranges[0];
+  function append(){
+   merged.push(vertical?{x1:fixed,y1:start,x2:fixed,y2:end}:{x1:start,y1:fixed,x2:end,y2:fixed});
+  }
+  for(let i=1;i<ranges.length;i++){
+   const [from,to]=ranges[i];
+   if(from<=end+1/precision){end=Math.max(end,to)}
+   else{append();start=from;end=to}
+  }
+  append();
+ }
+ return merged;
+}
+
+export function graphSegments(steps,positions){
+ const raw=[];
+ for(const {a,b} of graphEdges(steps,positions)){
+  const mid=(a.x+b.x)/2;
+  raw.push({x1:a.x,y1:a.y,x2:mid,y2:a.y});
+  raw.push({x1:mid,y1:a.y,x2:mid,y2:b.y});
+  raw.push({x1:mid,y1:b.y,x2:b.x,y2:b.y});
+ }
+ return mergeOrthogonalSegments(raw);
+}
