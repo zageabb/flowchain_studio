@@ -1,3 +1,8 @@
+## v1.12.5 · Collapsible process analysis
+
+- **Process analysis · Indicative estimates** now has a **Minimise ▴ / Expand ▾** control matching the TODAY and TOMORROW process panels.
+- Minimising hides the TODAY/TOMORROW estimates and structural diagnostics; it does not change any process records or calculated hours.
+
 # FlowChain Studio
 
 React/Vite department swimlane flow editor for modelling workflows such as TAIJU's tender-to-delivery data flow.
