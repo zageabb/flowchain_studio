@@ -1,4 +1,4 @@
-// Browser-only export: high-resolution combined PNG and editable two-slide PowerPoint.
+// Browser-only export: three separate high-resolution PNGs and editable PowerPoint with a step-list slide.
 import {graphLayout,graphEdges,edgePath} from './graph';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
@@ -24,12 +24,46 @@ async function rasterize(project,flow,scale){
  return canvas;
  }finally{URL.revokeObjectURL(url)}
 }
+// PNG files are intentionally separate so presentation authors can use each independently.
+async function pngBlob(canvas){
+ const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+ if(!blob)throw Error('Unable to create PNG');return blob;
+}
+function stepListCanvas(project){
+ const flows=['today','tomorrow'];
+ const widest=Math.max(...flows.map(f=>project.flows[f].steps.length));
+ const scale=2,column=760,pad=48,row=35,header=125;
+ const height=Math.max(460,header+widest*row+pad);
+ const canvas=document.createElement('canvas');canvas.width=column*2*scale;canvas.height=height*scale;
+ const ctx=canvas.getContext('2d');if(!ctx)throw Error('Canvas unavailable');
+ ctx.scale(scale,scale);ctx.fillStyle='#FFFFFF';ctx.fillRect(0,0,column*2,height);
+ ctx.fillStyle='#24334B';ctx.font='bold 28px Arial';ctx.fillText('PROCESS STEP LIST',pad,45);
+ ctx.fillStyle='#657389';ctx.font='17px Arial';ctx.fillText(project.title||'FlowChain Studio',pad,77);
+ flows.forEach((flow,group)=>{
+  const x=group*column+pad,steps=project.flows[flow].steps;
+  ctx.fillStyle=flow==='today'?'#46556A':'#CD1745';ctx.font='bold 23px Arial';ctx.fillText(flow.toUpperCase()+' ('+steps.length+' steps)',x,header-20);
+  steps.forEach((step,i)=>{
+   const y=header+i*row;
+   if(i%2===0){ctx.fillStyle='#F3F6FA';ctx.fillRect(x-10,y-23,column-pad*2+12,row)}
+   ctx.fillStyle='#D91A48';ctx.font='bold 15px Arial';ctx.fillText(String(i+1).padStart(2,'0'),x,y);
+   ctx.fillStyle='#24334B';ctx.font='16px Arial';
+   const dept=project.departments.find(d=>d.id===step.departmentId)?.name||'';
+   const name=step.name||'Untitled step';
+   // Keep names legible without spilling into the other column.
+   const trim=(value,max)=>value.length>max?value.slice(0,max-1)+'…':value;
+   ctx.fillText(trim(name,43),x+40,y);
+   ctx.fillStyle='#8290A3';ctx.font='12px Arial';ctx.fillText(trim(dept,26),x+490,y);
+  });
+ });
+ return canvas;
+}
 export async function exportPng(project){
- const a=await rasterize(project,'today',2),b=await rasterize(project,'tomorrow',2);
- const gap=28,out=document.createElement('canvas');out.width=Math.max(a.width,b.width);out.height=a.height+b.height+gap;
- const ctx=out.getContext('2d');if(!ctx)throw Error('Canvas unavailable');
- ctx.fillStyle='#fff';ctx.fillRect(0,0,out.width,out.height);ctx.drawImage(a,0,0);ctx.drawImage(b,0,a.height+gap);
- const blob=await new Promise(resolve=>out.toBlob(resolve,'image/png'));if(!blob)throw Error('Unable to create PNG');saveBlob(blob,safeFile(project.title)+'-today-tomorrow.png');
+ const filename=safeFile(project.title);
+ // Trigger each download directly; some browsers may request permission for multiple downloads.
+ for(const flow of ['today','tomorrow']){
+  saveBlob(await pngBlob(await rasterize(project,flow,2)),filename+'-'+flow+'.png');
+ }
+ saveBlob(await pngBlob(stepListCanvas(project)),filename+'-step-list.png');
 }
 export async function exportPptx(project){
  const {default:PptxGenJS}=await import('pptxgenjs');
@@ -72,5 +106,26 @@ export async function exportPptx(project){
   });
   slide.addText('FlowChain Studio • '+g.steps.length+' steps • '+graphEdges(g.steps,g.positions).length+' dependencies',{x:.3,y:7.12,w:12.5,h:.2,fontSize:9,color:'8591A2',margin:0});
  }
- await pptx.writeFile({fileName:safeFile(project.title)+'-today-tomorrow.pptx'});
+ // Third slide: a numbered legend for BOTH diagrams. Numbers are independent by flow.
+ // Long processes automatically continue onto additional legend slides.
+ const entriesPerColumn=26;
+ const totalPages=Math.max(1,...['today','tomorrow'].map(f=>Math.ceil(project.flows[f].steps.length/entriesPerColumn)));
+ for(let page=0;page<totalPages;page++){
+  const slide=pptx.addSlide();slide.background={color:'FFFFFF'};
+  slide.addText('Process step list'+(totalPages>1?' ('+(page+1)+'/'+totalPages+')':''),{x:.35,y:.2,w:12.6,h:.45,fontSize:22,bold:true,color:'29384B',margin:0});
+  for(const [index,flow] of ['today','tomorrow'].entries()){
+   const left=.38+index*6.48;
+   slide.addText(flow.toUpperCase(),{x:left,y:.88,w:5.95,h:.35,bold:true,fontSize:16,color:flow==='today'?'46556A':'CD1745',margin:0});
+   project.flows[flow].steps.slice(page*entriesPerColumn,(page+1)*entriesPerColumn).forEach((step,i)=>{
+    const number=page*entriesPerColumn+i+1,y=1.35+i*.215;
+    if(i%2===0)slide.addShape(S.rect,{x:left-.06,y:y-.01,w:6.15,h:.215,line:{color:'F1F4F8',transparency:100},fill:{color:'F1F4F8'}});
+    slide.addText(String(number),{x:left,y,w:.33,h:.18,fontSize:9,bold:true,color:'D91A48',margin:0});
+    slide.addText(String(step.name||'Untitled step'),{x:left+.38,y,w:4.02,h:.18,fontSize:9,color:'29384B',margin:0,breakLine:false});
+    const department=project.departments.find(d=>d.id===step.departmentId)?.name||'';
+    slide.addText(department,{x:left+4.5,y,w:1.5,h:.18,fontSize:7.5,color:'738096',margin:0,breakLine:false});
+   });
+  }
+  slide.addText('Numbers refer to the corresponding TODAY or TOMORROW flow diagram.',{x:.38,y:7.13,w:12.3,h:.18,fontSize:9,color:'7A8598',margin:0});
+ }
+ await pptx.writeFile({fileName:safeFile(project.title)+'-today-tomorrow-steps.pptx'});
 }
