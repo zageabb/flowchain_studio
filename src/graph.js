@@ -73,15 +73,35 @@ export function graphLayout(steps,departments,{left=210,top=94,lane=84,gap=125}=
  const laneHeights=departments.map(d=>Math.max(lane,...Array.from(levels.entries()).map(([id,n])=>laneCounts.get(d.id+'|'+n)||0).map(count=>count>1?count*39+24:lane)));
  const laneStarts=[];let y=top;
  for(const h of laneHeights){laneStarts.push(y);y+=h}
- const positions=new Map(),counter=new Map();
- steps.forEach((s,i)=>{
-  const col=levels.get(s.id),row=departments.findIndex(d=>d.id===s.departmentId),k=s.departmentId+'|'+col;
-  const sub=counter.get(k)||0;counter.set(k,sub+1);
-  const count=laneCounts.get(k)||1;
-  const yPos=laneStarts[row]+laneHeights[row]/2+(sub-(count-1)/2)*39;
-  positions.set(s.id,{x:left+col*gap,y:yPos,index:i,level:col});
- });
+ // Order competing nodes within the same lane and dependency layer by the
+ // barycentre of their prerequisites. This reduces avoidable edge crossings
+ // while keeping departments and all process dependencies unchanged.
+ const positions=new Map(),groups=new Map(),stepIndex=new Map(steps.map((s,i)=>[s.id,i]));
+ for(const s of steps){
+  const k=s.departmentId+'|'+levels.get(s.id);
+  if(!groups.has(k))groups.set(k,[]);
+  groups.get(k).push(s);
+ }
  const maxLevel=Math.max(0,...levels.values());
+ for(let col=0;col<=maxLevel;col++){
+  departments.forEach((department,row)=>{
+   const key=department.id+'|'+col,group=groups.get(key)||[];
+   const centre=laneStarts[row]+laneHeights[row]/2;
+   const score=s=>{
+    const parentYs=s.dependsOn.map(id=>positions.get(id)?.y).filter(Number.isFinite);
+    if(parentYs.length)return parentYs.reduce((a,b)=>a+b,0)/parentYs.length;
+    // For independent roots, order toward the lane containing their children.
+    const childRows=steps.filter(t=>t.dependsOn.includes(s.id)).map(t=>departments.findIndex(d=>d.id===t.departmentId));
+    return childRows.length?childRows.reduce((sum,r)=>sum+laneStarts[r]+laneHeights[r]/2,0)/childRows.length:centre;
+   };
+   group.sort((a,b)=>score(a)-score(b)||stepIndex.get(a.id)-stepIndex.get(b.id));
+   group.forEach((s,index)=>{
+    const yPos=centre+(index-(group.length-1)/2)*39;
+    positions.set(s.id,{x:left+col*gap,y:yPos,index:stepIndex.get(s.id),level:col});
+   });
+  });
+ }
+
  return {positions,laneStarts,laneHeights,width:Math.max(1000,left+maxLevel*gap+90),height:y+16,departments,steps};
 }
 export function graphEdges(steps,positions){
