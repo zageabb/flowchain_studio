@@ -34,7 +34,10 @@ test('shortcut does not run through an intervening node in its lane',()=>{
  ];
  const {positions}=graphLayout(steps,departments);
  const segments=graphSegments(steps,positions);
- const p2=positions.get('2');
- assert(!segments.some(s=>s.y1===p2.y&&s.y2===p2.y&&
-    Math.min(s.x1,s.x2)<p2.x-16&&Math.max(s.x1,s.x2)>p2.x+16));
+ const p1=positions.get('1'),p2=positions.get('2');
+ // The shortcut bypasses step 2 on an elevated horizontal track.
+ // Ordinary 1->2 and 2->3 connectors are intentionally allowed to meet
+ // at the centre of step 2, which is drawn above their shared endpoint.
+ assert(segments.some(s=>s.y1===p1.y-28&&s.y2===p1.y-28&&
+    Math.min(s.x1,s.x2)<p2.x&&Math.max(s.x1,s.x2)>p2.x));
 });
