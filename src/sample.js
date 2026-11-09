@@ -1,5 +1,5 @@
-import {normalizeSteps,assertGraph} from './graph';
-import {normalizeGroups} from './subprocess';
+import {normalizeSteps,assertGraph} from './graph.js';
+import {normalizeGroups} from './subprocess.js';
 export const uid=()=>globalThis.crypto?.randomUUID?.()||Math.random().toString(36).slice(2);
 export const sample={
  version:1,title:"Supply Chain Data Flow",subtitle:"Tender to Delivery",
