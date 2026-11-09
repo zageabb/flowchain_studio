@@ -17,9 +17,13 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - **Undo / Redo** toolbar actions, including Ctrl/Cmd+Z and Ctrl/Cmd+Y when not editing a text field
 - **Connect steps** mode: choose a source numbered step and click the destination, with circular-dependency protection
 - Zoom controls and fit-width mode for the editor diagrams
+- Named browser-local process snapshots (up to 12) with save, restore and delete. Export JSON for portable backups.
+- Comparison highlights added (green), removed (grey), and changed (amber) numbered steps while comparison is visible
 - TODAY vs TOMORROW change summary: added, removed, reordered/moved, details changed and prerequisites changed
 - Step metadata: responsible role, system, activity type, inputs, outputs, work hours and waiting hours
 - Indicative critical-path calculation based on dependencies and estimated hours. Parallel branches use the longest prerequisite. This is an estimate, not a project schedule or resource-constrained simulation.
+- Structural diagnostics flag disconnected activities, multiple starts/ends, and count splits and joins.
+- Removing a shared department now reassigns affected steps in both flows. Connected-step deletion previews the downstream relinking.
 
 ## TODAY / TOMORROW and exports
 - Independent TODAY and TOMORROW step sequences, displayed in stacked swimlane diagrams
@@ -71,4 +75,4 @@ Version 2 JSON stores `version`, `title`, `subtitle`, shared `departments: [{id,
 The order of each flow's steps array is its process sequence. The order of the departments array is the swimlane order. Both are independent.
 
 ## Status
-Active prototype. No backend required. Source-of-truth files remain in the browser until exported as JSON. Run `npm test` and `npm run build` before deploying. Browser behaviour, PowerPoint interoperability, and very large diagrams require practical testing.
+Active prototype. No backend required. Source-of-truth files remain in the browser until exported as JSON. Run `npm test` and `npm run build` before deploying. Browser behaviour, PowerPoint interoperability, and very large diagrams require practical testing. Advanced auto-routing (ELK.js), multiuser/server-backed projects, and end-to-end browser testing are future development phases.
