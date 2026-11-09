@@ -13,15 +13,17 @@ const steps=[
 const group={id:'loop',name:'Repeat supplier check',stepIds:['b','c'],repeats:3,collapsed:true};
 const project={title:'Repeat',subtitle:'',departments:[{id:'ops',name:'Operations'}],
  flows:{today:{steps,groups:[group],lineStyle:'solid'},tomorrow:{steps,groups:[],lineStyle:'dotted'}}};
-test('collapsed HTML diagram renders one unnumbered loop and preserves other step numbers',()=>{
+test('HTML diagram keeps source nodes and annotates repeat on their connecting edge',()=>{
  const svg=diagramSvg(project,'today');
  assert.match(svg,/data-id="group:loop"/);
  assert.match(svg,/×3/);
  assert.match(svg,/class="node repeat-zigzag"/);
  assert.match(svg,/<path d="M [^"]+" stroke="#d91a48"/);
  assert.doesNotMatch(svg,/<rect[^>]*fill="#334e72"/);
- assert.doesNotMatch(svg,/data-id="b"/);
- assert.doesNotMatch(svg,/data-id="c"/);
+ assert.match(svg,/data-id="b"/);
+ assert.match(svg,/data-id="c"/);
+ assert.match(svg,/>2<\/text>/);
+ assert.match(svg,/>3<\/text>/);
  assert.match(svg,/data-id="d"/);
  assert.match(svg,/>4<\/text>/);
 });
@@ -76,4 +78,35 @@ test('dotted flow has matching dotted square wave, and solid flow has no dashed 
  assert.match(dottedSvg,/stroke-dasharray="2 9"/);
  assert.match(dottedSvg,/<path[^>]*stroke-dasharray="2 9"/);
  assert.doesNotMatch(solidSvg,/stroke-dasharray/);
+});
+
+test('repeat between step 4 and step 5 leaves both step nodes visible in HTML',async()=>{
+ const {repeatConnectionAnnotations,graphSegmentsWithoutRepeatEdges}=await import('../src/repeat-zigzag.js');
+ const {graphLayout,graphSegments}=await import('../src/graph.js');
+ const five=[
+  {id:'1',name:'One',departmentId:'ops',dependsOn:[]},
+  {id:'2',name:'Two',departmentId:'ops',dependsOn:['1']},
+  {id:'3',name:'Three',departmentId:'ops',dependsOn:['2']},
+  {id:'4',name:'Four',departmentId:'ops',dependsOn:['3'],durationHours:2},
+  {id:'5',name:'Five',departmentId:'ops',dependsOn:['4'],durationHours:5}
+ ];
+ const project45={title:'4 to 5',departments:[{id:'ops',name:'Operations'}],
+  flows:{today:{steps:five,groups:[{id:'g45',name:'Review again',stepIds:['4','5'],repeats:3,collapsed:true}],lineStyle:'dotted'},tomorrow:{steps:five,groups:[],lineStyle:'solid'}}};
+ const svg=diagramSvg(project45,'today');
+ assert.match(svg,/aria-label="Step 4: Four"/);
+ assert.match(svg,/aria-label="Step 5: Five"/);
+ assert.match(svg,/data-id="group:g45"/);
+ assert.match(svg,/×3/);
+ const layout=graphLayout(five,project45.departments);
+ const waves=repeatConnectionAnnotations(five,project45.flows.today.groups,layout.positions);
+ assert.equal(waves.length,1);
+ assert.equal(waves[0].from,'4');
+ assert.equal(waves[0].to,'5');
+ assert.equal(graphSegmentsWithoutRepeatEdges(five,layout.positions,waves,graphSegments).length,
+              graphSegments(five.slice(0,4),layout.positions).length);
+ const html=buildInteractiveHtml(project45,null,'1.12.3');
+ const timing=JSON.parse(html.match(/<script type="application\/json" id="flow-times">([^<]+)<\/script>/)[1]);
+ assert.ok(timing.today.byStep['4']>0);
+ assert.ok(timing.today.byStep['5']>timing.today.byStep['4']);
+ assert.ok(timing.today.byStep['group:g45']>0);
 });
