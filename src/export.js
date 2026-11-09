@@ -45,7 +45,16 @@ export async function exportPptx(project){
    slide.addText(d.name,{x:.38,y:y+row*.2,w:1.9,h:row*.58,fontSize:11,bold:true,color:'29384B',margin:0,breakLine:false});
   });
   const pts=g.steps.map((s,i)=>({x:left+i*interval,y:top+g.departments.findIndex(d=>d.id===s.departmentId)*row+row/2}));
-  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],mid=(a.x+b.x)/2;const ln=(x1,y1,x2,y2)=>slide.addShape(S.line,{x:x1,y:y1,w:x2-x1,h:y2-y1,line:{color:'D91A48',width:2,dashType:project.flows[flow].lineStyle==='dotted'?'sysDot':'solid',beginArrowType:'none',endArrowType:'none'}});ln(a.x,a.y,mid,a.y);ln(mid,a.y,mid,b.y);ln(mid,b.y,b.x,b.y)}
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],mid=(a.x+b.x)/2;const ln=(x1,y1,x2,y2)=>{
+   // DrawingML rejects negative shape extents. Normalise upward/leftward connectors.
+   // Keeping line x/y/w/h non-negative prevents the PowerPoint repair dialog.
+   const x=Math.min(x1,x2),y=Math.min(y1,y2);
+   const w=Math.abs(x2-x1),h=Math.abs(y2-y1);
+   slide.addShape(S.line,{x,y,w,h,
+    flipV:(x2-x1)*(y2-y1)<0,
+    line:{color:'D91A48',width:2,dashType:project.flows[flow].lineStyle==='dotted'?'sysDot':'solid'}
+   });
+  };ln(a.x,a.y,mid,a.y);ln(mid,a.y,mid,b.y);ln(mid,b.y,b.x,b.y)}
   pts.forEach((p,i)=>{const r=.13;slide.addShape(S.ellipse,{x:p.x-r,y:p.y-r,w:r*2,h:r*2,fill:{color:'D91A48'},line:{color:'FFFFFF',width:1.5}});slide.addText(String(i+1),{x:p.x-r,y:p.y-r+.005,w:r*2,h:r*2-0.005,fontSize:8,color:'FFFFFF',align:'center',valign:'mid',bold:true,margin:0})});
   slide.addText('FlowChain Studio • '+g.steps.length+' steps • '+g.departments.length+' departments',{x:.3,y:7.1,w:12.5,h:.23,fontSize:9,color:'8591A2',margin:0});
  }
