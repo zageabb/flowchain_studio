@@ -33,8 +33,16 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Independently choose **Solid** or **Dotted** connecting lines for TODAY and TOMORROW
 - **Minimise / Expand** each process diagram independently to save screen space; the left-hand step editor stays available
 - Export **three separate high-resolution PNG files**: TODAY diagram, TOMORROW diagram, and a numbered step list covering both flows. The browser may request permission to download multiple files.
-- Export one editable **PPTX** with slide 1 = TODAY, slide 2 = TOMORROW, slide 3 = the numbered step list for both flows. Very long lists continue on additional slides.
+- Export one editable **PPTX** with slide 1 = TODAY, slide 2 = TOMORROW, slide 3 = the numbered step list for both flows, followed by an executive summary and detailed change slides. Very long lists continue on additional slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
+
+## Parallel route channels and presentation summary (v1.6)
+
+- Orthogonal connectors now use separate midpoint tracks for *unrelated* parallel branches in the same column gap. Connected split/join branches keep shared trunks, and coincident strokes are still merged before drawing. This is a lightweight deterministic router, **not** the full ELK.js engine.
+- All three diagram outputs (live SVG, offline HTML, and PNG/PPTX export) use the same connection routing logic.
+- PowerPoint keeps **slide 1: TODAY**, **slide 2: TOMORROW**, and the numbered step list next, then adds an **executive process improvement overview**.
+- The overview shows process step counts, manual/automated activity counts, added/removed/moved/modified steps, changed connections, and indicative critical-path time if time estimates exist in both processes.
+- Additional editable slides list named changes in manageable pages of up to 16 items. No ungrounded benefit claims or percent improvements are inserted.
 
 ## Smarter layout and new projects
 
