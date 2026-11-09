@@ -48,7 +48,7 @@ test('interactive HTML embeds cumulative path timing and per-flow progress bars'
  custom.flows.today.steps[2].durationHours=40;
  custom.flows.tomorrow.steps[0].durationHours=20;
  const html=buildInteractiveHtml(custom);
- const match=html.match(/<script type="application\\/json" id="flow-times">([^<]+)<\\/script>/);
+ const match=html.match(new RegExp('<script type="application/json" id="flow-times">([^<]+)</script>'));
  assert.ok(match,'embedded timing data exists');
  const timing=JSON.parse(match[1]);
  assert.equal(timing.today.byStep.b,120);
