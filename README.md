@@ -36,9 +36,17 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary and step-level ScreenTips including work/wait hours, without per-step appendix slides. Very long entries continue onto further slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## v1.12.3 · Repeat annotation between original numbered steps
+
+- **Fixed the missing numbered steps**: repeat groups no longer replace steps 4 and 5 (or any other selected steps) in the editor, interactive HTML, PNG or PPTX process diagrams. Every original step circle and its existing number remains visible.
+- The **full-height square wave is attached to a real dependency between selected steps**, with the same solid/dotted styling as the process. The `×N` label shows repeat count above the connection.
+- Wave hover information provides **iteration sublabels** such as `4.1 → 5.1`, `4.2 → 5.2`, without creating duplicate steps or changing source IDs/numbering.
+- The HTML viewer preserves individual step hover information and repeat-adjusted cumulative estimates. Repeated step records remain visible in the process timeline.
+- Existing v1.12.2 project JSON is compatible: stored group metadata continues to identify the relevant steps. **The browser's saved project is local to each site/origin**; importing an HTML file does not update another site's FlowChain editor. If one view has a repeat and another does not, load the same JSON project on both.
+
 ## v1.12.2 · Full-height square-wave repeat connections
 
-- Repeated steps are visualised as **multiple full-height vertical strokes**, staggered horizontally and joined at alternating top/bottom ends like a square wave, between the preceding and following process steps.
+- Repeated steps are visualised as **multiple full-height vertical strokes**, staggered horizontally and joined at alternating top/bottom ends like a square wave, on the connection joining the original steps.
 - The repeat connector uses the **same solid or dotted line style** as its flow. The repeat count appears as **×N** above the connection, with no separate boxed object or step number.
 - Each repetition produces a vertical traversal where space permits; at large repeat counts the view is capped at 12 columns and retains the exact ×N label for readability.
 - Actual dependency links connect to the square-wave endpoints, avoiding the detached miniature zigzag. Live, HTML, PNG and editable PowerPoint diagrams share the geometry. Click the repeat connection in the live editor or offline HTML for the underlying subprocess.
