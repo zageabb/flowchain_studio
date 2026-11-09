@@ -1,9 +1,9 @@
 // Export a fully self-contained, read-only interactive HTML process document.
 // No React, CDN, network requests, or local server required.
-import {graphLayout,graphSegments} from './graph';
-import {processMetrics} from './metrics';
-import {timelineSvg} from './timeline';
-import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess';
+import {graphLayout,graphSegments} from './graph.js';
+import {processMetrics} from './metrics.js';
+import {timelineSvg} from './timeline.js';
+import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
 
 const xml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const fileName=value=>(value||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
