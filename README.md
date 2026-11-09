@@ -36,6 +36,14 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary and step-level ScreenTips including work/wait hours, without per-step appendix slides. Very long entries continue onto further slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## Process hours and cumulative HTML hover (v1.10)
+
+- **Interactive HTML**: above each TODAY/TOMORROW process, the live indicator shows **elapsed hours through the hovered step / total estimated elapsed process hours**. For example `120 / 300 h`, updating to `135.2 / 300 h` as the pointer moves. The indicator updates for keyboard focus and resets to `0 / total` when the pointer leaves a step.
+- Each process also displays **total work hours** and **total waiting hours** across all its activities. Those summed hours can exceed elapsed hours if work runs in parallel.
+- The numerator comes from each step's completion time in the dependency graph: **maximum predecessor finish + the step's work hours + its waiting hours**. The denominator is the maximum finish of any step. These figures are *estimates*, not progress measurements or resource-constrained schedules.
+- **PowerPoint**: TODAY and TOMORROW diagram slides each display elapsed process hours, total work hours and total waiting hours. The executive overview also shows those totals for both processes. No step-by-step timing hover bar is added to PPTX; the ScreenTips continue to show per-step hours.
+- Missing durations contribute zero in this estimate; users should populate all relevant step estimates before interpreting the totals.
+
 ## PowerPoint ScreenTips instead of step-detail slides (v1.9)
 
 - Each numbered node in the TODAY and TOMORROW diagrams has a native PowerPoint hyperlink ScreenTip. Hover to see a short step summary: title, department, responsible role, system/application, activity type, work hours and waiting hours. Remaining space includes inputs, outputs, description and prerequisites where possible.
