@@ -39,3 +39,24 @@ test('comparison identifies added removed changed and moved steps',()=>{
  assert.equal(results.counts.moved,1);
  assert.equal(results.counts.dependencies,0);
 });
+
+test('interactive HTML embeds cumulative path timing and per-flow progress bars',()=>{
+ const custom=structuredClone(project);
+ custom.flows.today.steps[0].durationHours=100;
+ custom.flows.today.steps[0].waitHours=0;
+ custom.flows.today.steps[1].durationHours=20;
+ custom.flows.today.steps[2].durationHours=40;
+ custom.flows.tomorrow.steps[0].durationHours=20;
+ const html=buildInteractiveHtml(custom);
+ const match=html.match(/<script type="application\\/json" id="flow-times">([^<]+)<\\/script>/);
+ assert.ok(match,'embedded timing data exists');
+ const timing=JSON.parse(match[1]);
+ assert.equal(timing.today.byStep.b,120);
+ assert.equal(timing.today.hours,160);
+ assert.equal(timing.today.workHours,160);
+ assert.equal(timing.tomorrow.hours,20);
+ assert.match(html,/data-time="today"/);
+ assert.match(html,/data-time="tomorrow"/);
+ assert.match(html,/updateTime\(node.dataset.flow,node.dataset.id\)/);
+ assert.match(html,/time-readout/);
+});
