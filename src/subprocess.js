@@ -109,10 +109,24 @@ export function expandedTimingSteps(steps,groups){
  * region, never cloned steps. Elapsed time uses its critical dependency path;
  * work and wait are accumulated independently across ALL repetitions.
  */
+// Keep timing keyed by the ORIGINAL numbered steps for the HTML hover panel.
+// Serial repeated passes add elapsed time at the exit of each selected region.
+export function repeatAwareNumberedMetrics(steps,groups=[]){
+ const transformed=steps.map(s=>({...s}));
+ for(const group of normalizeGroups(groups,steps)){
+  try{validateGroupBoundary(steps,group.stepIds)}catch{continue}
+  const extra=groupStepDuration(steps,group)*(group.repeats-1);
+  if(extra<=0)continue;
+  const ids=new Set(group.stepIds);
+  const exits=transformed.filter(s=>ids.has(s.id)&&!transformed.some(child=>ids.has(child.id)&&(child.dependsOn||[]).includes(s.id)));
+  for(const step of exits)step.durationHours=(Number(step.durationHours)||0)+extra;
+ }
+ return processMetrics(transformed);
+}
 export function processMetricsWithGroups(steps,groups=[]){
  const base=processMetrics(steps);
  const projected=expandedTimingSteps(steps,groups);
- const m=projected===steps?base:processMetrics(projected);
+ const m=projected===steps?base:repeatAwareNumberedMetrics(steps,groups);
  const byId=new Map(steps.map(s=>[s.id,s]));
  let work=base.totalWorkHours,wait=base.totalWaitHours;
  for(const group of normalizeGroups(groups,steps)){
