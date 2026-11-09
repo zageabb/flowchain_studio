@@ -76,8 +76,26 @@ function App(){
  function togglePredecessor(id,checked){change(d=>{const s=d.steps.find(x=>x.id===selected.id);if(!s)return d;s.dependsOn=checked?[...new Set([...s.dependsOn,id])]:s.dependsOn.filter(v=>v!==id);return d})}
  function update(field,val){change(d=>{const s=d.steps.find(x=>x.id===selected.id);if(s)s[field]=val;return d})}
  function moveLane(delta){const i=doc.departments.findIndex(d=>d.id===selected.departmentId),target=doc.departments[i+delta];if(target)update('departmentId',target.id)}
- function removeStep(){if(!selected)return;change(d=>{d.steps=removeGraphStep(d.steps,selected.id);return d});setChosen(doc.steps[ix+1]?.id||doc.steps[ix-1]?.id||null)}
- function removeLane(id){if(doc.departments.length<2)return;const n=doc.steps.filter(s=>s.departmentId===id).length;if(n&&!confirm('Move '+n+' steps to the first remaining department?'))return;change(d=>{d.departments=d.departments.filter(x=>x.id!==id);d.steps.forEach(s=>{if(s.departmentId===id)s.departmentId=d.departments[0].id});return d})}
+ function removeStep(){
+  if(!selected)return;
+  const children=doc.steps.filter(s=>s.dependsOn.includes(selected.id));
+  const warning=children.length?'\nDownstream dependencies for '+children.map(s=>s.name).join(', ')+' will be reconnected to this step’s prerequisites.':'';
+  if(!confirm('Delete step '+(ix+1)+': '+selected.name+'?'+warning))return;
+  change(d=>{d.steps=removeGraphStep(d.steps,selected.id);return d});
+  setChosen(doc.steps[ix+1]?.id||doc.steps[ix-1]?.id||null);
+ }
+ function removeLane(id){
+  if(project.departments.length<2)return;
+  const n=['today','tomorrow'].reduce((total,flow)=>total+project.flows[flow].steps.filter(s=>s.departmentId===id).length,0);
+  if(!confirm('Remove this department? '+n+' affected step(s) across BOTH flows will move to the first remaining department.'))return;
+  commitProject(p=>{
+   p.departments=p.departments.filter(x=>x.id!==id);
+   for(const flow of ['today','tomorrow']){
+    p.flows[flow].steps.forEach(step=>{if(step.departmentId===id)step.departmentId=p.departments[0].id});
+   }
+   return p;
+  });
+ }
  function shiftLane(i,delta){const to=i+delta;if(to<0||to>=doc.departments.length)return;change(d=>{const [x]=d.departments.splice(i,1);d.departments.splice(to,0,x);return d})}
  function exportJson(){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(project,null,2)],{type:'application/json'}));a.href=url;a.download=(doc.title.replace(/[^\w-]+/g,'-')||'flow')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setMessage('JSON exported')}
  async function importJson(e){const f=e.target.files?.[0];if(!f)return;try{const d=validateProject(JSON.parse(await f.text()));commitProject(()=>d);setMode('today');setChosen(null);setMessage('Imported TODAY and TOMORROW flows')}catch(err){setMessage('Import failed: '+err.message)}finally{e.target.value=''}}
