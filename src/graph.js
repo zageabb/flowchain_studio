@@ -55,7 +55,7 @@ export function insertStep(steps,index,newStep,{parallel=false}={}){
  assertGraph(result);
  return result;
 }
-export function graphLayout(steps,departments,{left=210,top=94,lane=84,gap=125}={}){
+export function graphLayout(steps,departments,{left=210,top=94,lane=84,gap=125,elkOrder=null}={}){
  assertGraph(steps);
  const byId=new Map(steps.map(s=>[s.id,s])),levels=new Map();
  function level(s){
@@ -94,7 +94,7 @@ export function graphLayout(steps,departments,{left=210,top=94,lane=84,gap=125}=
     const childRows=steps.filter(t=>t.dependsOn.includes(s.id)).map(t=>departments.findIndex(d=>d.id===t.departmentId));
     return childRows.length?childRows.reduce((sum,r)=>sum+laneStarts[r]+laneHeights[r]/2,0)/childRows.length:centre;
    };
-   group.sort((a,b)=>score(a)-score(b)||stepIndex.get(a.id)-stepIndex.get(b.id));
+   group.sort((a,b)=>elkOrder&&Number.isFinite(elkOrder[a.id])&&Number.isFinite(elkOrder[b.id])?(elkOrder[a.id]-elkOrder[b.id]||stepIndex.get(a.id)-stepIndex.get(b.id)):(score(a)-score(b)||stepIndex.get(a.id)-stepIndex.get(b.id)));
    group.forEach((s,index)=>{
     const yPos=centre+(index-(group.length-1)/2)*39;
     positions.set(s.id,{x:left+col*gap,y:yPos,index:stepIndex.get(s.id),level:col});
