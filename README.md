@@ -36,6 +36,13 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary and step-level ScreenTips including work/wait hours, without per-step appendix slides. Very long entries continue onto further slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## Visible release version (v1.10.1)
+
+- The application header now shows **FlowChain Studio v1.10.1**, with its number taken directly from the `version` field in `package.json`; the browser tab displays the same version.
+- Standalone interactive HTML includes the release version in its page title and heading.
+- Exported PowerPoint document metadata and diagram/summary footer text identify the release that generated the file.
+- Version numbers follow the package version, not the process document revision. Future releases should bump `package.json` to update the displayed number.
+
 ## Process hours and cumulative HTML hover (v1.10)
 
 - **Interactive HTML**: above each TODAY/TOMORROW process, the live indicator shows **elapsed hours through the hovered step / total estimated elapsed process hours**. For example `120 / 300 h`, updating to `135.2 / 300 h` as the pointer moves. The indicator updates for keyboard focus and resets to `0 / total` when the pointer leaves a step.
