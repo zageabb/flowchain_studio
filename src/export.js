@@ -3,10 +3,12 @@ import {graphLayout,graphEdges,graphSegments} from './graph';
 import {presentationSummary} from './presentation-summary';
 import {processMetrics} from './metrics';
 import {stepScreenTip} from './step-export-details';
+import {collapsedFlow,expandedTimingSteps} from './subprocess';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 function geometry(project,flow,elkOrders=null){
- const g=graphLayout(project.flows[flow].steps,project.departments,{left:215,top:140,lane:76,gap:100,elkOrder:elkOrders?.[flow]||null});
+ const visible=collapsedFlow(project.flows[flow].steps,project.flows[flow].groups||[]);
+ const g=graphLayout(visible,project.departments,{left:215,top:140,lane:76,gap:100,elkOrder:elkOrders?.[flow]||null});
  return {...g,height:g.height+38};
 }
 function svgFor(project,flow,elkOrders=null){
@@ -14,7 +16,10 @@ function svgFor(project,flow,elkOrders=null){
  const rows=g.departments.map((d,i)=>`<rect x="8" y="${g.laneStarts[i]}" width="${g.width-16}" height="${g.laneHeights[i]-6}" rx="7" fill="${i%2?'#e9eef4':'#f3f6fa'}"/><text x="20" y="${g.laneStarts[i]+g.laneHeights[i]/2+4}" fill="#273747" font-family="Arial" font-weight="bold" font-size="13">${esc(d.name)}</text>`).join('');
  const dash=project.flows[flow].lineStyle==='dotted'?'stroke-dasharray="2 9"':'';
  const segments=graphSegments(g.steps,g.positions).map(({x1,y1,x2,y2})=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#d91a48" stroke-width="3" stroke-linecap="round" ${dash}/>`).join('');
- const nodes=g.steps.map((s,i)=>{const p=g.positions.get(s.id);return `<circle cx="${p.x}" cy="${p.y}" r="16" fill="#d91a48" stroke="white" stroke-width="3"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">${i+1}</text>`}).join('');
+ const numbers=new Map(project.flows[flow].steps.map((step,i)=>[step.id,i+1]));
+ const nodes=g.steps.map(s=>{const p=g.positions.get(s.id);
+  if(s.isGroup)return `<rect x="${p.x-45}" y="${p.y-21}" width="90" height="42" rx="9" fill="#334e72"/><text x="${p.x}" y="${p.y+5}" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">↻ x${s.repeats}</text>`;
+  return `<circle cx="${p.x}" cy="${p.y}" r="16" fill="#d91a48" stroke="white" stroke-width="3"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">${numbers.get(s.id)}</text>`}).join('');
  return `<svg xmlns="http://www.w3.org/2000/svg" width="${g.width}" height="${g.height}" viewBox="0 0 ${g.width} ${g.height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="30" font-family="Arial" font-size="20" font-weight="bold" fill="#d91a48">${flow.toUpperCase()}</text><text x="20" y="58" font-family="Arial" font-size="13" fill="#435066">${esc(project.title)} — ${esc(project.subtitle)}</text><text x="20" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPARTMENT</text><text x="215" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPENDENCY FLOW →</text>${rows}${segments}${nodes}</svg>`;
 }
 function saveBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
@@ -80,7 +85,7 @@ export async function exportPptx(project,elkOrders=null,appVersion=''){
   const slide=pptx.addSlide(),g=geometry(project,flow,elkOrders);
   slide.background={color:'FFFFFF'};
   slide.addText(flow.toUpperCase()+' — '+project.title,{x:.25,y:.2,w:12.8,h:.48,bold:true,color:flow==='today'?'46556A':'CD1745',fontSize:21,margin:0});
-  const timing=processMetrics(g.steps);
+  const timing=processMetrics(expandedTimingSteps(project.flows[flow].steps,project.flows[flow].groups||[]));
   const fmt=value=>String(Number(value.toFixed(2)));
   slide.addText('Estimated elapsed process: '+fmt(timing.hours)+' h  |  Total work: '+fmt(timing.totalWorkHours)+' h  |  Total waiting: '+fmt(timing.totalWaitHours)+' h',
    {x:.3,y:.78,w:12.6,h:.25,fontSize:11,color:'485A70',margin:0});
@@ -103,14 +108,20 @@ export async function exportPptx(project,elkOrders=null,appVersion=''){
   for(const {x1,y1,x2,y2} of graphSegments(g.steps,g.positions)){
    drawLine(xMap(x1),yMap(y1),xMap(x2),yMap(y2));
   }
-  g.steps.forEach((step,i)=>{
+  const numbers=new Map(project.flows[flow].steps.map((step,i)=>[step.id,i+1]));
+  g.steps.forEach(step=>{
    const p=g.positions.get(step.id),x=xMap(p.x),y=yMap(p.y),r=.13;
-   const tip=stepScreenTip(project,flow,step,i);
+   if(step.isGroup){
+    const tip=step.name+' | Repeats: '+step.repeats+' | '+step.memberCount+' source steps (not duplicated)';
+    const link={slide:flow==='today'?1:2,tooltip:tip};
+    slide.addShape(S.roundRect,{x:x-.36,y:y-.16,w:.72,h:.32,rectRadius:.08,fill:{color:'334E72'},line:{color:'FFFFFF',width:1},hyperlink:link});
+    slide.addText('↻ x'+step.repeats,{x:x-.34,y:y-.12,w:.68,h:.22,fontSize:9,color:'FFFFFF',align:'center',bold:true,margin:0,hyperlink:link});
+    return;
+   }
+   const tip=stepScreenTip(project,flow,step,numbers.get(step.id)-1);
    const link={slide:flow==='today'?1:2,tooltip:tip};
-   // Link each numbered circle to its own slide: hovering shows a ScreenTip,
-   // clicking does not navigate away from the current flow diagram.
    slide.addShape(S.ellipse,{x:x-r,y:y-r,w:2*r,h:2*r,fill:{color:'D91A48'},line:{color:'FFFFFF',width:1.5},hyperlink:link});
-   slide.addText(String(i+1),{x:x-r,y:y-r,w:2*r,h:2*r,fontSize:8,color:'FFFFFF',align:'center',valign:'mid',bold:true,margin:0,hyperlink:link});
+   slide.addText(String(numbers.get(step.id)),{x:x-r,y:y-r,w:2*r,h:2*r,fontSize:8,color:'FFFFFF',align:'center',valign:'mid',bold:true,margin:0,hyperlink:link});
   });
   slide.addText('FlowChain Studio'+(appVersion?' v'+appVersion:'')+' • '+g.steps.length+' steps • '+graphEdges(g.steps,g.positions).length+' dependencies',{x:.3,y:7.12,w:12.5,h:.2,fontSize:9,color:'8591A2',margin:0});
  }
