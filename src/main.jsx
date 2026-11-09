@@ -27,7 +27,7 @@ function App(){
  function toggleCollapsed(flow){setCollapsed(prev=>({...prev,[flow]:!prev[flow]}))}
  function setLineStyle(flow,lineStyle){setProject(p=>({...p,flows:{...p.flows,[flow]:{...p.flows[flow],lineStyle}}}))}
  function copyToday(){if(!confirm('Replace TOMORROW with a copy of TODAY?'))return;setProject(p=>({...p,flows:{...p.flows,tomorrow:{...p.flows.tomorrow,steps:copy(p.flows.today.steps)}}}));setMode('tomorrow');setChosen(null)}
- async function exportGraphic(kind){try{setMessage('Generating '+kind.toUpperCase()+'…');if(kind==='png')await exportPng(project);else await exportPptx(project);setMessage(kind.toUpperCase()+' exported (TODAY and TOMORROW)')}catch(err){setMessage('Export failed: '+err.message)}}
+ async function exportGraphic(kind){try{setMessage('Generating '+kind.toUpperCase()+'…');if(kind==='png')await exportPng(project);else await exportPptx(project);setMessage(kind==='png'?'Three PNG exports started: TODAY, TOMORROW, step list. Allow multiple downloads if prompted.':'PowerPoint exported: TODAY, TOMORROW and step-list slides.')}catch(err){setMessage('Export failed: '+err.message)}}
  function move(from,to){if(from<0||to<0||to>=doc.steps.length)return;change(d=>{let [s]=d.steps.splice(from,1);d.steps.splice(to,0,s);return d})}
  function add(at=doc.steps.length,parallel=false){const id=uid();change(d=>{d.steps=insertStep(d.steps,at,{id,name:parallel?'Parallel Step':'New Step',description:'',departmentId:selected?.departmentId||d.departments[0].id,dependsOn:[]},{parallel});return d});setChosen(id);setTab('steps')}
  function togglePredecessor(id,checked){change(d=>{const s=d.steps.find(x=>x.id===selected.id);if(!s)return d;s.dependsOn=checked?[...new Set([...s.dependsOn,id])]:s.dependsOn.filter(v=>v!==id);return d})}
