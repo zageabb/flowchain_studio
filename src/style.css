@@ -60,3 +60,10 @@
 .timeline-stat-grid>div{background:#f3f6fa;padding:12px;border-radius:8px;display:flex;flex-direction:column;gap:5px}
 .timeline-stat-grid strong{font-size:21px;color:#c81647}.timeline-stat-grid small{font-size:12px;color:#677b90}
 .timeline-comparison{margin:12px 16px;padding:11px;background:#f4f7fb;font-size:13px;color:#344860;border-radius:7px}
+
+.group-controls{padding:9px 12px;border-bottom:1px solid #e1e7f0;display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.group-controls>small{font-size:11px;color:#6c7c90}.group-controls>button{padding:7px 9px;font-size:12px}
+.group-editor{display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%;background:#f1f5fa;padding:8px;border-radius:8px}
+.group-editor>input{width:115px;flex:1;min-width:80px;padding:6px}.group-editor label{font-size:11px;display:flex;gap:4px;align-items:center}
+.group-editor label input{width:64px;padding:5px}.group-editor span{font-size:11px;color:#60738a}
+.group-editor button{padding:6px 8px;font-size:11px}
