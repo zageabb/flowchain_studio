@@ -4,11 +4,11 @@ import {presentationSummary} from './presentation-summary.js';
 import {processMetrics} from './metrics.js';
 import {stepScreenTip} from './step-export-details.js';
 import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess.js';
-import {repeatWaveGeometry,svgPointPath} from './repeat-zigzag.js';
+import {repeatConnectionAnnotations,graphSegmentsWithoutRepeatEdges,svgPointPath} from './repeat-zigzag.js';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 function geometry(project,flow,elkOrders=null){
- const visible=collapsedFlow(project.flows[flow].steps,project.flows[flow].groups||[]);
+ const visible=project.flows[flow].steps;
  const g=graphLayout(visible,project.departments,{left:215,top:140,lane:76,gap:100,elkOrder:elkOrders?.[flow]||null});
  return {...g,height:g.height+38};
 }
@@ -16,16 +16,15 @@ function svgFor(project,flow,elkOrders=null){
  const g=geometry(project,flow,elkOrders);
  const rows=g.departments.map((d,i)=>`<rect x="8" y="${g.laneStarts[i]}" width="${g.width-16}" height="${g.laneHeights[i]-6}" rx="7" fill="${i%2?'#e9eef4':'#f3f6fa'}"/><text x="20" y="${g.laneStarts[i]+g.laneHeights[i]/2+4}" fill="#273747" font-family="Arial" font-weight="bold" font-size="13">${esc(d.name)}</text>`).join('');
  const dash=project.flows[flow].lineStyle==='dotted'?'stroke-dasharray="2 9"':'';
- const groupIds=new Set(g.steps.filter(s=>s.isGroup).map(s=>s.id));
- const ordinary=g.steps.filter(s=>!s.isGroup).map(s=>({...s,dependsOn:s.dependsOn.filter(id=>!groupIds.has(id))}));
- const segments=graphSegments(ordinary,g.positions).map(({x1,y1,x2,y2})=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#d91a48" stroke-width="3" stroke-linecap="round" ${dash}/>`).join('');
- const repeatLines=g.steps.filter(s=>s.isGroup).map(s=>{
-  const w=repeatWaveGeometry(g.steps,g.positions,s);
-  return [...w.links,w.points].map(points=>`<path d="${svgPointPath(points)}" stroke="#d91a48" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" fill="none" ${dash}/>`).join('');
- }).join('');
+ const repeats=repeatConnectionAnnotations(g.steps,project.flows[flow].groups||[],g.positions);
+ const segments=graphSegmentsWithoutRepeatEdges(g.steps,g.positions,repeats,graphSegments).map(({x1,y1,x2,y2})=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#d91a48" stroke-width="3" stroke-linecap="round" ${dash}/>`).join('');
+ const repeatLines=repeats.map(w=>
+  [...w.links,w.points].map(points=>`<path d="${svgPointPath(points)}" stroke="#d91a48" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" fill="none" ${dash}/>`).join('')+
+  `<text x="${w.x}" y="${w.labelY}" text-anchor="middle" fill="#334e72" font-family="Arial" font-size="12" font-weight="bold">×${w.repeats}</text>`
+ ).join('');
  const numbers=new Map(project.flows[flow].steps.map((step,i)=>[step.id,i+1]));
  const nodes=g.steps.map(s=>{const p=g.positions.get(s.id);
-  if(s.isGroup){const w=repeatWaveGeometry(g.steps,g.positions,s),top=Math.min(...w.points.map(p=>p.y));return `<text x="${p.x}" y="${top-9}" text-anchor="middle" fill="#334e72" font-family="Arial" font-size="12" font-weight="bold">×${s.repeats}</text>`}
+
   return `<circle cx="${p.x}" cy="${p.y}" r="16" fill="#d91a48" stroke="white" stroke-width="3"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">${numbers.get(s.id)}</text>`}).join('');
  return `<svg xmlns="http://www.w3.org/2000/svg" width="${g.width}" height="${g.height}" viewBox="0 0 ${g.width} ${g.height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="30" font-family="Arial" font-size="20" font-weight="bold" fill="#d91a48">${flow.toUpperCase()}</text><text x="20" y="58" font-family="Arial" font-size="13" fill="#435066">${esc(project.title)} — ${esc(project.subtitle)}</text><text x="20" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPARTMENT</text><text x="215" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPENDENCY FLOW →</text>${rows}${segments}${repeatLines}${nodes}</svg>`;
 }
@@ -112,29 +111,24 @@ export async function exportPptx(project,elkOrders=null,appVersion=''){
    slide.addShape(S.line,{x,y,w:Math.max(0,Math.abs(x2-x1)),h:Math.max(0,Math.abs(y2-y1)),
     flipV:(x2-x1)*(y2-y1)<0,line:{...lineStyle}});
   };
-  const groupIds=new Set(g.steps.filter(s=>s.isGroup).map(s=>s.id));
-  const normal=g.steps.filter(s=>!s.isGroup).map(s=>({...s,dependsOn:s.dependsOn.filter(id=>!groupIds.has(id))}));
-  for(const {x1,y1,x2,y2} of graphSegments(normal,g.positions)){
+  const repeats=repeatConnectionAnnotations(g.steps,project.flows[flow].groups||[],g.positions);
+  for(const {x1,y1,x2,y2} of graphSegmentsWithoutRepeatEdges(g.steps,g.positions,repeats,graphSegments)){
    drawLine(xMap(x1),yMap(y1),xMap(x2),yMap(y2));
+  }
+  for(const wave of repeats){
+   for(const points of [...wave.links,wave.points]){
+    for(let j=1;j<points.length;j++){
+     const a=points[j-1],b=points[j];drawLine(xMap(a.x),yMap(a.y),xMap(b.x),yMap(b.y));
+    }
+   }
+   const group=(project.flows[flow].groups||[]).find(g=>g.id===wave.id);
+   const tip=(group?.name||'Repeated steps')+' | '+wave.repeats+' iterations | Steps '+wave.members.map(id=>g.steps.findIndex(s=>s.id===id)+1).join(', ');
+   const link={slide:flow==='today'?1:2,tooltip:tip};
+   slide.addText('×'+wave.repeats,{x:xMap(wave.x)-.28,y:yMap(wave.labelY)-.08,w:.56,h:.2,fontSize:10,color:'334E72',align:'center',bold:true,margin:0,hyperlink:link});
   }
   const numbers=new Map(project.flows[flow].steps.map((step,i)=>[step.id,i+1]));
   g.steps.forEach(step=>{
    const p=g.positions.get(step.id),x=xMap(p.x),y=yMap(p.y),r=.13;
-   if(step.isGroup){
-    const tip=step.name+' | Repeats: '+step.repeats+' | '+step.memberCount+' source steps (not duplicated)';
-    const link={slide:flow==='today'?1:2,tooltip:tip};
-    const w=repeatWaveGeometry(g.steps,g.positions,step,{width:90});
-    for(const points of [...w.links,w.points]){
-     for(let j=1;j<points.length;j++){
-      const a=points[j-1],b=points[j];
-      drawLine(xMap(a.x),yMap(a.y),xMap(b.x),yMap(b.y));
-     }
-    }
-    const top=Math.min(...w.points.map(pt=>yMap(pt.y))),bottom=Math.max(...w.points.map(pt=>yMap(pt.y)));
-    slide.addText('×'+step.repeats,{x:x-.33,y:top-.24,w:.66,h:.21,fontSize:10,color:'334E72',align:'center',bold:true,margin:0,hyperlink:link});
-    slide.addShape(S.rect,{x:x-.37,y:top,w:.74,h:Math.max(.04,bottom-top),fill:{color:'FFFFFF',transparency:100},line:{color:'FFFFFF',transparency:100},hyperlink:link});
-    return;
-   }
    const tip=stepScreenTip(project,flow,step,numbers.get(step.id)-1);
    const link={slide:flow==='today'?1:2,tooltip:tip};
    slide.addShape(S.ellipse,{x:x-r,y:y-r,w:2*r,h:2*r,fill:{color:'D91A48'},line:{color:'FFFFFF',width:1.5},hyperlink:link});
