@@ -16,7 +16,10 @@ const project={title:'Repeat',subtitle:'',departments:[{id:'ops',name:'Operation
 test('collapsed HTML diagram renders one unnumbered loop and preserves other step numbers',()=>{
  const svg=diagramSvg(project,'today');
  assert.match(svg,/data-id="group:loop"/);
- assert.match(svg,/↻ x3/);
+ assert.match(svg,/×3/);
+ assert.match(svg,/class="node repeat-zigzag"/);
+ assert.match(svg,/<path d="M [^"]+" stroke="#d91a48"/);
+ assert.doesNotMatch(svg,/fill="#334e72"/);
  assert.doesNotMatch(svg,/data-id="b"/);
  assert.doesNotMatch(svg,/data-id="c"/);
  assert.match(svg,/data-id="d"/);
@@ -45,4 +48,16 @@ test('repeat block has one unnumbered timeline row with serial repeated duration
  assert.equal(row.number,t.rows.indexOf(row)+1); // internal only, display is unnumbered
  assert.equal(row.repeats,3);
  assert.equal(row.duration,24);
+});
+
+test('zigzag geometry shows the requested repeat count while keeping large counts legible',async()=>{
+ const {zigzagPoints,zigzagPath}=await import('../src/repeat-zigzag.js');
+ for(const count of [1,2,3,5,12]){
+  const pts=zigzagPoints(200,100,count);
+  assert.equal(pts.length,1+count*2);
+  assert.equal(pts[0].x,155);
+  assert.equal(pts.at(-1).x,245);
+  assert.match(zigzagPath(200,100,count),/^M /);
+ }
+ assert.equal(zigzagPoints(200,100,1000).length,25);
 });
