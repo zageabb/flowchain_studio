@@ -24,3 +24,22 @@ test('JSON validation preserves expanded step details',()=>{
  assert.equal(validated.flows.tomorrow.steps[0].activityType,'automated');
  assert.equal(validated.flows.today.steps[0].durationHours,2);
 });
+
+test('parallel branch elapsed progression uses longest predecessor rather than sum of branches',()=>{
+ const steps=[s('a',[],100),s('b',['a'],20),s('c',['a'],40),s('d',['b','c'],15.2)];
+ const m=processMetrics(steps);
+ assert.equal(m.finish.get('b'),120);
+ assert.equal(m.finish.get('c'),140);
+ assert.equal(m.finish.get('d'),155.2);
+ assert.equal(m.hours,155.2);
+ assert.equal(m.totalWorkHours,175.2);
+ assert.equal(m.totalWaitHours,0);
+ assert.equal(m.totalEffortHours,175.2);
+});
+test('process totals account for waiting independently of work',()=>{
+ const steps=[s('a',[],2,3),s('b',['a'],1.2,4)];
+ const m=processMetrics(steps);
+ assert.equal(m.totalWorkHours,3.2);
+ assert.equal(m.totalWaitHours,7);
+ assert.equal(m.hours,10.2);
+});
