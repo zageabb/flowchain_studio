@@ -52,3 +52,33 @@ export function stepDetailPages(details,maxLines=18){
  for(let i=0;i<entries.length;i+=maxLines)pages.push(entries.slice(i,i+maxLines));
  return pages.length?pages:[[]];
 }
+
+// PowerPoint ScreenTips are compact plain-text hints, not rich HTML panels.
+// Keep essential details first; desktop PowerPoint tooltip sizes vary.
+// Full text remains available in JSON and the interactive HTML export.
+export function stepScreenTip(project,flow,step,index,maxLength=250){
+ const detail=stepExportDetails(project,flow,step,index);
+ const fields=Object.fromEntries(detail.fields);
+ const clean=value=>String(value??'').replace(/\s+/g,' ').trim();
+ const cap=(value,size)=>clean(value).length>size?clean(value).slice(0,Math.max(0,size-1)).trimEnd()+'…':clean(value);
+ const required=[
+  detail.flow+' '+detail.number+'. '+cap(detail.name,52),
+  'Dept: '+cap(fields['Department'],40),
+  'Owner: '+cap(fields['Responsible role'],34)+' | System: '+cap(fields['System / application'],36),
+  'Activity: '+cap(fields['Activity type'],25)+' | Work: '+fields['Work hours']+' | Wait: '+fields['Waiting hours']
+ ];
+ let result=required.join('\n');
+ if(result.length>maxLength)return result.slice(0,maxLength-1)+'…';
+ const optional=[
+  ['Inputs',fields['Inputs']],['Outputs',fields['Outputs']],
+  ['Description',fields['Description']],['After',fields['Prerequisites']]
+ ].filter(([,value])=>value&&value!=='Not specified'&&value!=='None');
+ for(const [label,value] of optional){
+  const available=maxLength-result.length-label.length-3;
+  if(available<=5)break;
+  const text=cap(value,available);
+  result+='\n'+label+': '+text;
+  if(text!==clean(value))break;
+ }
+ return result;
+}
