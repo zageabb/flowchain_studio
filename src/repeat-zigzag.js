@@ -62,13 +62,16 @@ export function repeatConnectionAnnotations(steps,groups,positions,{width=84,max
   const left=Math.min(a.x,b.x)+19,right=Math.max(a.x,b.x)-19;
   const usable=Math.max(8,Math.min(width,right-left));
   const x=(a.x+b.x)/2;
-  const points=repeatSquareWavePoints(x,a.y,b.y,group.repeats,{width:usable,maxColumns,minHeight:0});
+  const points=repeatSquareWavePoints(x,a.y,b.y,group.repeats,{width:usable,maxColumns,minHeight:56});
   const first=points[0],last=points.at(-1);
   const links=[
    [{x:a.x,y:a.y},{x:first.x,y:a.y}],
    [{x:last.x,y:b.y},{x:b.x,y:b.y}]
   ];
-  annotations.push({id:group.id,name:group.name||'Repeat',repeats:group.repeats,
+  const numbered=members.map(step=>steps.indexOf(step)+1);
+  const examplePasses=Array.from({length:Math.min(8,group.repeats)},(_,i)=>
+   numbered.map(n=>n+'.'+(i+1)).join(' → ')).join(' | ')+(group.repeats>8?' | …':'');
+  annotations.push({id:group.id,name:group.name||'Repeat',repeats:group.repeats,examplePasses,
    from:edge.from,to:edge.to,points,links,x,labelY:Math.min(a.y,b.y)-15,
    minY:Math.min(a.y,b.y),maxY:Math.max(a.y,b.y),members:members.map(s=>s.id)});
  }
