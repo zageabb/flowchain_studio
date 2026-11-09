@@ -178,6 +178,41 @@ export async function exportPptx(project,elkOrders=null,appVersion=''){
   slide.addText('Source: FlowChain Studio'+(appVersion?' v'+appVersion:'')+' • TODAY/TOMORROW data within this presentation',
    {x:.42,y:7.10,w:12.2,h:.2,fontSize:8,color:'8996A7',margin:0});
  }
+ // Static editable timeline overview for stakeholders.
+ {
+  const slide=pptx.addSlide();slide.background={color:'FFFFFF'};
+  slide.addText('Process timing and critical path',{x:.42,y:.27,w:12.4,h:.47,fontSize:23,bold:true,color:'29384B',margin:0});
+  slide.addText('Estimated hours · parallel activities contribute through their longest dependency path',
+   {x:.43,y:.83,w:12.2,h:.28,fontSize:11,color:'708096',margin:0});
+  const maxHours=Math.max(1,summary.metrics.today.hours,summary.metrics.tomorrow.hours);
+  ['today','tomorrow'].forEach((flow,i)=>{
+   const m=summary.metrics[flow],y=1.54+i*2.05;
+   slide.addText(flow.toUpperCase(),{x:.48,y,w:3.3,h:.3,fontSize:17,bold:true,color:flow==='today'?'4B596D':'D91A48',margin:0});
+   slide.addText(Number(m.hours.toFixed(2))+' h elapsed',{x:9.8,y,w:2.9,h:.35,fontSize:16,bold:true,color:'29384B',align:'right',margin:0});
+   slide.addShape(S.rect,{x:.48,y:y+.50,w:12.1,h:.35,line:{color:'E6EBF2',transparency:100},fill:{color:'E6EBF2'}});
+   if(m.hours>0)slide.addShape(S.rect,{x:.48,y:y+.50,w:12.1*m.hours/maxHours,h:.35,
+    line:{color:flow==='today'?'64748B':'D91A48',transparency:100},fill:{color:flow==='today'?'64748B':'D91A48'}});
+   slide.addText('Work '+Number(m.totalWorkHours.toFixed(2))+' h   |   Waiting '+Number(m.totalWaitHours.toFixed(2))+' h   |   Zero-float activities '+m.criticalSteps.length,
+    {x:.5,y:y+1.00,w:12.1,h:.29,fontSize:11,color:'46576A',margin:0});
+   const byId=new Map(project.flows[flow].steps.map((step,j)=>[step.id,(j+1)+'. '+step.name]));
+   const labels=m.criticalPath.map(id=>byId.get(id)||id);
+   const pathText=labels.length?labels.join(' → '):'No activities';
+   slide.addText('One critical path: '+pathText,{x:.5,y:y+1.40,w:12,h:.40,fontSize:10,color:'55677E',margin:0,breakLine:false});
+  });
+  const complete=['today','tomorrow'].every(flow=>project.flows[flow].steps.every(step=>Number.isFinite(Number(step.durationHours))&&Number.isFinite(Number(step.waitHours))));
+  if(complete){
+   const delta=summary.metrics.today.hours-summary.metrics.tomorrow.hours;
+   slide.addText('Estimated elapsed change: '+Number(delta.toFixed(2))+' h'+(delta>=0?' faster in TOMORROW':' slower in TOMORROW'),
+    {x:.48,y:6.02,w:12.0,h:.36,fontSize:15,bold:true,color:'29384B',margin:0});
+  }else{
+   slide.addText('Some durations are missing. Comparisons are provisional until every step has work and wait estimates.',
+    {x:.48,y:6.02,w:12.0,h:.36,fontSize:11,color:'8B5E20',margin:0});
+  }
+  slide.addText('Estimates exclude resource constraints; total work hours may exceed elapsed hours when tasks run in parallel.',
+   {x:.48,y:6.69,w:12.0,h:.29,fontSize:10,color:'77859A',margin:0});
+  slide.addText('FlowChain Studio'+(appVersion?' v'+appVersion:'')+' • Critical path analysis',
+   {x:.48,y:7.12,w:12.1,h:.19,fontSize:9,color:'8A95A7',margin:0});
+ }
  // Step details now live in the PowerPoint ScreenTips attached to
  // numbered flow circles and numbered list entries, not additional slides.
  // Keep the executive process-improvement overview; omit all per-step appendices.
