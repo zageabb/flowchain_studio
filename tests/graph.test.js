@@ -92,3 +92,33 @@ test('same-lane parallel nodes follow their upstream lane positions instead of a
  assert.ok(layout.positions.get('topTarget').y<layout.positions.get('bottomTarget').y);
  assert.equal(graphEdges(steps,layout.positions).length,2);
 });
+
+test('independent parallel branches use distinct routing channels',()=>{
+ const steps=[
+  {id:'a',name:'A',departmentId:'scm',dependsOn:[]},
+  {id:'b',name:'B',departmentId:'scm',dependsOn:[]},
+  {id:'c',name:'C',departmentId:'eng',dependsOn:['a']},
+  {id:'d',name:'D',departmentId:'eng',dependsOn:['b']}
+ ];
+ const positions=new Map([
+  ['a',{x:200,y:100}],['b',{x:200,y:140}],
+  ['c',{x:320,y:180}],['d',{x:320,y:220}]
+ ]);
+ const segments=graphSegments(steps,positions);
+ const vertical=segments.filter(seg=>seg.x1===seg.x2&&seg.y1!==seg.y2);
+ assert.equal(vertical.length,2);
+ assert.notEqual(vertical[0].x1,vertical[1].x1);
+});
+test('a true parallel split retains a single shared vertical trunk',()=>{
+ const steps=[
+  {id:'a',name:'A',departmentId:'scm',dependsOn:[]},
+  {id:'b',name:'B',departmentId:'scm',dependsOn:['a']},
+  {id:'c',name:'C',departmentId:'eng',dependsOn:['a']}
+ ];
+ const positions=new Map([['a',{x:200,y:100}],['b',{x:320,y:80}],['c',{x:320,y:180}]]);
+ const segments=graphSegments(steps,positions);
+ const shared=segments.filter(seg=>seg.x1===260&&seg.x2===260);
+ assert.equal(shared.length,1);
+ assert.equal(shared[0].y1,80);
+ assert.equal(shared[0].y2,180);
+});
