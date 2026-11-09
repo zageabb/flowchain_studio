@@ -33,7 +33,7 @@ test('standalone HTML contains two embedded timelines and critical metrics',()=>
  const html=buildInteractiveHtml(p);
  assert.doesNotMatch(html,/__TIMELINE_TODAY__/);
  assert.match(html,/data-flow="tomorrow"/);
- assert.match(html,/class="timeline-view"/);
+ assert.match(html,/class="panel timeline-view"/);
  assert.match(html,/Earliest start/);
  assert.match(html,/Latest finish/);
  assert.match(html,/Total float/);
