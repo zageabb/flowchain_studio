@@ -23,3 +23,14 @@ export function validateDocument(doc){
  if(new Set(doc.steps.map(s=>s.id)).size!==doc.steps.length)throw Error("Duplicate step IDs.");
  return {version:1,title:String(doc.title||"Untitled Flow"),subtitle:String(doc.subtitle||""),departments:doc.departments.map(d=>({id:String(d.id),name:d.name})),steps:doc.steps.map(s=>({id:String(s.id),name:s.name,departmentId:s.departmentId,description:String(s.description||"")}))};
 }
+
+export function validateProject(data){
+ if(data?.flows){
+  const today=validateDocument({...data,steps:data.flows.today?.steps||[]});
+  const tomorrow=validateDocument({...data,steps:data.flows.tomorrow?.steps||[]});
+  return {version:2,title:today.title,subtitle:today.subtitle,departments:today.departments,flows:{today:{steps:today.steps},tomorrow:{steps:tomorrow.steps}}};
+ }
+ const old=validateDocument(data);
+ return {version:2,title:old.title,subtitle:old.subtitle,departments:old.departments,flows:{today:{steps:old.steps},tomorrow:{steps:structuredClone(old.steps)}}};
+}
+export const sampleProject=validateProject(sample);
