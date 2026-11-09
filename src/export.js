@@ -3,7 +3,7 @@ import {graphLayout,graphEdges,graphSegments} from './graph';
 import {presentationSummary} from './presentation-summary';
 import {processMetrics} from './metrics';
 import {stepScreenTip} from './step-export-details';
-import {collapsedFlow,expandedTimingSteps} from './subprocess';
+import {collapsedFlow,expandedTimingSteps,processMetricsWithGroups} from './subprocess';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 function geometry(project,flow,elkOrders=null){
@@ -85,7 +85,7 @@ export async function exportPptx(project,elkOrders=null,appVersion=''){
   const slide=pptx.addSlide(),g=geometry(project,flow,elkOrders);
   slide.background={color:'FFFFFF'};
   slide.addText(flow.toUpperCase()+' — '+project.title,{x:.25,y:.2,w:12.8,h:.48,bold:true,color:flow==='today'?'46556A':'CD1745',fontSize:21,margin:0});
-  const timing=processMetrics(expandedTimingSteps(project.flows[flow].steps,project.flows[flow].groups||[]));
+  const timing=processMetricsWithGroups(project.flows[flow].steps,project.flows[flow].groups||[]);
   const fmt=value=>String(Number(value.toFixed(2)));
   slide.addText('Estimated elapsed process: '+fmt(timing.hours)+' h  |  Total work: '+fmt(timing.totalWorkHours)+' h  |  Total waiting: '+fmt(timing.totalWaitHours)+' h',
    {x:.3,y:.78,w:12.6,h:.25,fontSize:11,color:'485A70',margin:0});
