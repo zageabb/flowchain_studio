@@ -19,7 +19,7 @@ function App(){
  const selected=doc.steps.find(s=>s.id===chosen)||doc.steps[0],ix=doc.steps.findIndex(s=>s.id===selected?.id);
  function change(fn){setProject(p=>{const d=copy(p);const view={...d,steps:d.flows[mode].steps};const out=fn(view);d.title=out.title;d.subtitle=out.subtitle;d.departments=out.departments;d.flows[mode].steps=out.steps;return d})}
  function switchMode(next){setMode(next);setChosen(null)}
- function copyToday(){if(!confirm('Replace TOMORROW with a copy of TODAY?'))return;setProject(p=>({...p,flows:{...p.flows,tomorrow:{steps:copy(p.flows.today.steps)}}}}));setMode('tomorrow');setChosen(null)}
+ function copyToday(){if(!confirm('Replace TOMORROW with a copy of TODAY?'))return;setProject(p=>({...p,flows:{...p.flows,tomorrow:{steps:copy(p.flows.today.steps)}}}));setMode('tomorrow');setChosen(null)}
  async function exportGraphic(kind){try{setMessage('Generating '+kind.toUpperCase()+'…');if(kind==='png')await exportPng(project);else await exportPptx(project);setMessage(kind.toUpperCase()+' exported (TODAY and TOMORROW)')}catch(err){setMessage('Export failed: '+err.message)}}
  function move(from,to){if(from<0||to<0||to>=doc.steps.length)return;change(d=>{let [s]=d.steps.splice(from,1);d.steps.splice(to,0,s);return d})}
  function add(at=doc.steps.length){const id=uid();change(d=>{d.steps.splice(at,0,{id,name:'New Step',description:'',departmentId:selected?.departmentId||d.departments[0].id});return d});setChosen(id);setTab('steps')}
