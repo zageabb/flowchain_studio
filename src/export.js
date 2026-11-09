@@ -122,7 +122,7 @@ export async function exportPptx(project,elkOrders=null,appVersion=''){
     }
    }
    const group=(project.flows[flow].groups||[]).find(g=>g.id===wave.id);
-   const tip=(group?.name||'Repeated steps')+' | '+wave.repeats+' iterations | Steps '+wave.members.map(id=>g.steps.findIndex(s=>s.id===id)+1).join(', ');
+   const tip=(group?.name||'Repeated steps')+' | '+wave.repeats+' iterations | Steps '+wave.members.map(id=>g.steps.findIndex(s=>s.id===id)+1).join(', ')+' | Passes: '+wave.examplePasses;
    const link={slide:flow==='today'?1:2,tooltip:tip};
    slide.addText('×'+wave.repeats,{x:xMap(wave.x)-.28,y:yMap(wave.labelY)-.08,w:.56,h:.2,fontSize:10,color:'334E72',align:'center',bold:true,margin:0,hyperlink:link});
   }
