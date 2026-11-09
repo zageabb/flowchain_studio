@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {stepExportDetails,stepDetailPages,splitFieldText} from '../src/step-export-details.js';
+import {stepExportDetails,stepDetailPages,splitFieldText,stepScreenTip} from '../src/step-export-details.js';
 import {buildInteractiveHtml} from '../src/interactive-export.js';
 const long='Description '.repeat(130);
 const project={
@@ -49,4 +49,30 @@ test('offline HTML viewer includes separate hours and complete detail labels',()
  }
  assert.match(html,/Work: .*formatHours/);
  assert.match(html,/formatTotal\(step.durationHours,step.waitHours\)/);
+});
+
+test('PowerPoint ScreenTip contains role system activity and hours within compact limit',()=>{
+ const step=project.flows.today.steps[0];
+ const tip=stepScreenTip(project,'today',step,0);
+ assert.match(tip,/TODAY 1\. RFRFQ/);
+ assert.match(tip,/Owner: Buyer/);
+ assert.match(tip,/System: TAIJU/);
+ assert.match(tip,/Activity: manual/);
+ assert.match(tip,/Work: 1\.75 h/);
+ assert.match(tip,/Wait: 2\.25 h/);
+ assert.ok(tip.length<=250);
+});
+test('PowerPoint ScreenTips distinguish missing metadata from zero hours',()=>{
+ const tip=stepScreenTip(project,'today',project.flows.today.steps[1],1);
+ assert.match(tip,/Owner: Not specified/);
+ assert.match(tip,/Work: 0 h/);
+ assert.match(tip,/Wait: 0 h/);
+ assert.ok(tip.length<=250);
+});
+test('very long ScreenTip content is bounded and not treated as full text',()=>{
+ const step={...project.flows.today.steps[0],name:'Long name '.repeat(12),owner:'Buyer '.repeat(15),system:'SAP '.repeat(20)};
+ const tip=stepScreenTip(project,'today',step,0);
+ assert.ok(tip.length<=250);
+ assert.match(tip,/Work:/);
+ assert.match(tip,/Wait:/);
 });
