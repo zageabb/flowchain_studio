@@ -52,3 +52,11 @@
 .layout-loading{font-size:12px;color:#697b92}
 
 .app-version{display:inline-block;margin-left:9px;vertical-align:middle;padding:2px 7px;border:1px solid #dbe3ec;border-radius:6px;background:#f3f6fa;color:#56667c;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:0}
+
+.timeline-scroll{overflow:auto;max-height:480px;border:1px solid #e0e7f0;border-radius:8px;background:#fff}
+.timeline-node{cursor:pointer}.timeline-node:hover rect{filter:brightness(.83)}.timeline-node:focus-visible{outline:2px solid #d91a48}
+.timeline-panel{padding-bottom:14px}.timeline-group{margin:10px 16px 20px}.timeline-group h3{font-size:14px;color:#394b60}
+.timeline-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;padding:14px 16px}
+.timeline-stat-grid>div{background:#f3f6fa;padding:12px;border-radius:8px;display:flex;flex-direction:column;gap:5px}
+.timeline-stat-grid strong{font-size:21px;color:#c81647}.timeline-stat-grid small{font-size:12px;color:#677b90}
+.timeline-comparison{margin:12px 16px;padding:11px;background:#f4f7fb;font-size:13px;color:#344860;border-radius:7px}
