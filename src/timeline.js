@@ -1,5 +1,5 @@
 // Dependency-aware timeline geometry used in React and the offline HTML export.
-import {processMetrics} from './metrics';
+import {processMetrics} from './metrics.js';
 
 export function timelineGeometry(steps,{labelWidth=205,pixelsPerHour=3,minWidth=950,rowHeight=32,top=54}={}){
  const m=processMetrics(steps);
