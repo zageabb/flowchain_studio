@@ -173,9 +173,40 @@ export function graphSegments(steps,positions){
   // for those without creating invalid coordinates.
   joinX.set(target,Number.isFinite(nearestParentX)?(nearestParentX+endX)/2:null);
  }
+ // Separate unrelated dependencies using the same column gap; genuine
+ // splits and joins share one channel. This also avoids false-looking joins
+ // between independent branches.
+ const channelBuckets=new Map();
+ for(const edge of edges){
+  const x=joinX.get(edge.target)??(edge.a.x+edge.b.x)/2;
+  if(!channelBuckets.has(x))channelBuckets.set(x,[]);
+  channelBuckets.get(x).push(edge);
+ }
+ const offsets=new Map();
+ for(const [x,bucket] of channelBuckets){
+  const remaining=new Set(bucket);
+  const components=[];
+  while(remaining.size){
+   const component=[],queue=[remaining.values().next().value];
+   remaining.delete(queue[0]);
+   while(queue.length){
+    const item=queue.pop();component.push(item);
+    for(const other of [...remaining]){
+     if(other.source===item.source||other.target===item.target){
+      remaining.delete(other);queue.push(other);
+     }
+    }
+   }
+   components.push(component);
+  }
+  components.forEach((component,index)=>{
+   const shift=index===0?0:(index%2?-(Math.floor((index+1)/2))*12:(index/2)*12);
+   component.forEach(edge=>offsets.set(edge,shift));
+  });
+ }
  for(const edge of edges){
   const {a,b}=edge;
-  const x=joinX.get(edge.target)??(a.x+b.x)/2;
+  const x=(joinX.get(edge.target)??(a.x+b.x)/2)+(offsets.get(edge)||0);
   // A long dependency may travel across same-department nodes. In that
   // case lift its horizontal segment above the node centres rather than
   // drawing a line through an unrelated numbered step.
