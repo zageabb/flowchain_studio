@@ -1,6 +1,7 @@
 // Browser-only export: three separate high-resolution PNGs and editable PowerPoint with a step-list slide.
 import {graphLayout,graphEdges,graphSegments} from './graph';
 import {presentationSummary} from './presentation-summary';
+import {processMetrics} from './metrics';
 import {stepScreenTip} from './step-export-details';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
@@ -79,6 +80,10 @@ export async function exportPptx(project,elkOrders=null){
   const slide=pptx.addSlide(),g=geometry(project,flow,elkOrders);
   slide.background={color:'FFFFFF'};
   slide.addText(flow.toUpperCase()+' — '+project.title,{x:.25,y:.2,w:12.8,h:.48,bold:true,color:flow==='today'?'46556A':'CD1745',fontSize:21,margin:0});
+  const timing=processMetrics(g.steps);
+  const fmt=value=>String(Number(value.toFixed(2)));
+  slide.addText('Estimated elapsed process: '+fmt(timing.hours)+' h  |  Total work: '+fmt(timing.totalWorkHours)+' h  |  Total waiting: '+fmt(timing.totalWaitHours)+' h',
+   {x:.3,y:.78,w:12.6,h:.25,fontSize:11,color:'485A70',margin:0});
   const horizontal=Math.max(1,Math.max(...Array.from(g.positions.values()).map(p=>p.x))-215);
   const vertical=Math.max(1,g.laneStarts.at(-1)+g.laneHeights.at(-1)-g.laneStarts[0]);
   const xMap=x=>2.4+(x-215)/horizontal*10.3;
@@ -147,7 +152,9 @@ export async function exportPptx(project,elkOrders=null){
    slide.addText(String(m.steps),{x:x+.2,y:2.02,w:1.4,h:.48,bold:true,fontSize:28,color:'27384B',margin:0});
    slide.addText('steps',{x:x+1.65,y:2.14,w:1.2,h:.25,fontSize:11,color:'63738A',margin:0});
    slide.addText(String(m.manual)+' manual  ·  '+String(m.automated)+' automated  ·  '+String(m.assisted)+' AI-assisted',
-    {x:x+.2,y:2.64,w:5.66,h:.22,fontSize:10,color:'63738A',margin:0});
+    {x:x+.2,y:2.57,w:5.66,h:.22,fontSize:9.6,color:'63738A',margin:0});
+   slide.addText('Elapsed: '+Number(m.hours.toFixed(2))+'h | Work: '+Number(m.totalWorkHours.toFixed(2))+'h | Wait: '+Number(m.totalWaitHours.toFixed(2))+'h',
+    {x:x+.2,y:2.78,w:5.66,h:.19,fontSize:9.6,bold:true,color:'29384B',margin:0});
   });
   const counters=[
    ['Added',summary.diff.counts.added],['Removed',summary.diff.counts.removed],
@@ -166,7 +173,7 @@ export async function exportPptx(project,elkOrders=null){
    ?'Estimated longest dependency path: TODAY '+tt.hours.toFixed(1)+'h → TOMORROW '+tm.hours.toFixed(1)+'h.'
    :'Process timing not compared: enter work / waiting time estimates in BOTH flows.';
   slide.addText(duration,{x:.42,y:5.98,w:12.35,h:.35,fontSize:12,bold:true,color:'29384B',margin:0});
-  slide.addText('Indicative model only. Parallel branches are evaluated by longest prerequisite, without resource constraints.',
+  slide.addText('Total work hours add all step effort; elapsed hours follow the longest dependency path, counting parallel branches once.', 
    {x:.42,y:6.43,w:12.25,h:.3,fontSize:10,color:'758398',margin:0});
   slide.addText('Source: FlowChain Studio • TODAY/TOMORROW data within this presentation',
    {x:.42,y:7.10,w:12.2,h:.2,fontSize:8,color:'8996A7',margin:0});
