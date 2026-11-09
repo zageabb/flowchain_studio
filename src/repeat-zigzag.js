@@ -1,20 +1,42 @@
-// Symbolic repeated subprocess connector. Each tooth represents one repeat up to
-// a legibility limit; the ×N label always preserves the exact configured count.
-// The collapsed group is an edge symbol, not a numbered process step.
-export function zigzagPoints(x,y,repeats,{width=90,amplitude=11,maxTeeth=12}={}){
- const count=Math.max(1,Math.min(maxTeeth,Math.floor(Number(repeats)||1)));
- const points=[{x:x-width/2,y}];
+// Orthogonal repeat notation: N full-height vertical strokes joined by
+// short horizontal offsets. Unlike a small zigzag node, this spans the
+// vertical gap from the preceding process step to the following step.
+export function repeatSquareWavePoints(x,startY,endY,repeats,{width=90,maxColumns=12,minHeight=56}={}){
+ const count=Math.max(1,Math.min(maxColumns,Math.floor(Number(repeats)||1)));
+ const top=Math.abs(endY-startY)<minHeight?Math.min(startY,endY)-minHeight/2:Math.min(startY,endY);
+ const bottom=Math.abs(endY-startY)<minHeight?Math.max(startY,endY)+minHeight/2:Math.max(startY,endY);
+ const upper=startY<=endY;
+ const firstY=upper?top:bottom, secondY=upper?bottom:top;
+ const left=x-width/2,right=x+width/2;
+ const points=[{x:left,y:startY}];
+ if(firstY!==startY)points.push({x:left,y:firstY});
  for(let i=0;i<count;i++){
-  const left=x-width/2+(i/count)*width;
-  const right=x-width/2+((i+1)/count)*width;
-  points.push({x:(left+right)/2,y:y-amplitude});
-  points.push({x:right,y});
+  const columnX=count===1?x:left+(right-left)*i/(count-1);
+  const entrance=i%2===0?firstY:secondY;
+  const exit=i%2===0?secondY:firstY;
+  if(points.at(-1).x!==columnX)points.push({x:columnX,y:entrance});
+  points.push({x:columnX,y:exit});
  }
+ if(points.at(-1).y!==endY)points.push({x:points.at(-1).x,y:endY});
  return points;
 }
-export function zigzagPath(x,y,repeats,options){
- return zigzagPoints(x,y,repeats,options).map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
+export function repeatSquareWavePath(x,startY,endY,repeats,opts){
+ return repeatSquareWavePoints(x,startY,endY,repeats,opts).map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
 }
-export function zigzagDescription(repeats,count){
- return 'Repeated '+repeats+' times'+(count?' · '+count+' original steps':'');
+export function repeatWaveGeometry(steps,positions,group,{width=90,maxColumns=12}={}){
+ const centre=positions.get(group.id);
+ const parents=group.dependsOn.map(id=>positions.get(id)).filter(Boolean);
+ const children=steps.filter(s=>s.dependsOn.includes(group.id)).map(s=>positions.get(s.id)).filter(Boolean);
+ const startY=parents[0]?.y??centre.y-55;
+ const endY=children[0]?.y??centre.y+55;
+ const left=centre.x-width/2,right=centre.x+width/2;
+ const points=repeatSquareWavePoints(centre.x,startY,endY,group.repeats,{width,maxColumns});
+ // Link all incoming and outgoing dependencies to the two wave endpoints.
+ const links=[];
+ for(const p of parents)links.push([{x:p.x,y:p.y},{x:left,y:p.y},{x:left,y:startY}]);
+ for(const p of children)links.push([{x:right,y:endY},{x:right,y:p.y},{x:p.x,y:p.y}]);
+ return {points,links,startY,endY,left,right,centreX:centre.x,top:Math.min(startY,endY),bottom:Math.max(startY,endY),repeats:group.repeats};
+}
+export function svgPointPath(points){
+ return points.map((p,i)=>(i?'L ':'M ')+p.x+' '+p.y).join(' ');
 }
