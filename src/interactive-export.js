@@ -19,7 +19,7 @@ export function diagramSvg(project,flow,elkOrders=null){
  const lines=graphSegmentsWithoutRepeatEdges(steps,g.positions,repeats,graphSegments).map(s=>'<line x1="'+s.x1+'" y1="'+s.y1+'" x2="'+s.x2+'" y2="'+s.y2+'" stroke="#d91a48" stroke-width="3" stroke-linecap="round"'+dash+'/>').join('');
  const waveLines=repeats.map(group=>{
   const paths=[...group.links,group.points].map(pts=>'<path d="'+svgPointPath(pts)+'" fill="none" stroke="#d91a48" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"'+dash+'/>').join('');
-  const waveTitle=group.name+' repeated '+group.repeats+' times • source steps '+group.members.map(id=>steps.findIndex(s=>s.id===id)+1).join(', ');
+  const waveTitle=group.name+' repeated '+group.repeats+' times • source steps '+group.members.map(id=>steps.findIndex(s=>s.id===id)+1).join(', ')+' • passes '+group.examplePasses;
   return '<g class="node repeat-zigzag" data-flow="'+flow+'" data-id="'+xml('group:'+group.id)+'" tabindex="0" role="button" aria-label="'+xml(waveTitle)+'">'+
    paths+'<text x="'+group.x+'" y="'+group.labelY+'" text-anchor="middle" font-size="12" font-weight="bold" fill="#334e72">×'+group.repeats+'</text>'+
    '<path d="'+svgPointPath(group.points)+'" fill="none" stroke="transparent" stroke-width="16"/>'+
