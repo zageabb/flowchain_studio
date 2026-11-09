@@ -36,6 +36,15 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Export one editable **PPTX** with slide 1 = TODAY, slide 2 = TOMORROW, slide 3 = the numbered step list for both flows, followed by an executive summary and detailed change slides. Very long lists continue on additional slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## Automatic ELK layout (v1.7)
+
+Select **Layout → ELK automatic** in the editor to use the Eclipse Layout Kernel's layered graph ordering, or **Standard** for the original reliable layout. ELK.js loads only when needed. The process remains left-to-right and each step remains in its assigned department swimlane; ELK determines the order of parallel nodes within each lane and stage. It does not change step IDs, dependency links or the editable JSON schema.
+
+- Preview re-runs the calculation when the process changes and shows **Arranging…** until ready.
+- PNG, editable PPTX, and standalone interactive HTML exports compute the selected ELK layout afresh so they match the current data.
+- If ELK cannot load, the browser shows the standard layout and reports the problem. Exports in ELK mode report errors rather than silently generating a mismatched output.
+- The ELK projection deliberately preserves fixed swimlanes and graph stages. It is not unrestricted free-form ELK placement, and remaining connector crossings are possible.
+
 ## Parallel route channels and presentation summary (v1.6)
 
 - Orthogonal connectors now use separate midpoint tracks for *unrelated* parallel branches in the same column gap. Connected split/join branches keep shared trunks, and coincident strokes are still merged before drawing. This is a lightweight deterministic router, **not** the full ELK.js engine.
