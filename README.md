@@ -36,6 +36,14 @@ Click **Export Interactive HTML** to download a single self-contained HTML file.
 - Export one editable **PPTX** with TODAY and TOMORROW diagrams, numbered step lists, an executive summary and step-level ScreenTips including work/wait hours, without per-step appendix slides. Very long entries continue onto further slides.
 - Export/import project JSON with both flows; old version 1 single-flow JSON is imported as TODAY and copied to TOMORROW
 
+## v1.11 · Timeline and critical path analysis
+
+- The application includes a **Show timeline** control with separate TODAY and TOMORROW dependency-based timelines. Each bar starts at the earliest permitted time; bars are red when their total float is zero and slate otherwise. Click or keyboard-select a bar to edit that step.
+- The timing engine uses an earliest-start forward pass and latest-start backward pass to calculate earliest start, earliest finish, latest start, latest finish and total float for every activity. Multiple parallel critical paths are supported.
+- The **standalone interactive HTML** contains both timeline diagrams. Clicking a timeline bar opens the step details and shows early/late timing, total float and critical status.
+- The **editable PowerPoint** has a process timing comparison slide with elapsed hours, total work, waiting time, one representative critical path and counts of zero-float activities.
+- These are indicative effort/duration estimates. Missing durations are treated as zero. The engine assumes dependencies alone determine start times; it does not include staff capacity, resource leveling, working calendars or dates.
+
 ## Visible release version (v1.10.1)
 
 - The application header now shows **FlowChain Studio v1.10.1**, with its number taken directly from the `version` field in `package.json`; the browser tab displays the same version.
