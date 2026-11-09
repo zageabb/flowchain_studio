@@ -4,9 +4,9 @@ import {graphLayout,graphSegments} from './graph';
 
 const xml=value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const fileName=value=>(value||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
-export function diagramSvg(project,flow){
+export function diagramSvg(project,flow,elkOrders=null){
  const steps=project.flows[flow].steps;
- const g=graphLayout(steps,project.departments,{left:215,top:112,lane:80,gap:125});
+ const g=graphLayout(steps,project.departments,{left:215,top:112,lane:80,gap:125,elkOrder:elkOrders?.[flow]||null});
  const stripes=project.departments.map((dept,i)=>
   '<rect x="6" y="'+g.laneStarts[i]+'" width="'+(g.width-12)+'" height="'+(g.laneHeights[i]-6)+'" rx="6" fill="'+(i%2?'#e8edf3':'#f2f5f9')+'"/>'+
   '<text x="17" y="'+(g.laneStarts[i]+g.laneHeights[i]/2+4)+'" font-size="13" font-weight="bold" fill="#26364a">'+xml(dept.name)+'</text>').join('');
@@ -24,10 +24,10 @@ export function diagramSvg(project,flow){
   '<text x="215" y="51" font-size="13" fill="#64748b" font-weight="bold">DEPENDENCY FLOW →</text>'+
   stripes+lines+nodes+'</svg>';
 }
-export function buildInteractiveHtml(project){
+export function buildInteractiveHtml(project,elkOrders=null){
  // JSON is inert inside application/json; escape '<' so it cannot end the script tag.
  const data=JSON.stringify(project).replace(/</g,'\\u003c').replace(/>/g,'\\u003e').replace(/&/g,'\\u0026');
- const today=diagramSvg(project,'today'),tomorrow=diagramSvg(project,'tomorrow');
+ const today=diagramSvg(project,'today',elkOrders),tomorrow=diagramSvg(project,'tomorrow',elkOrders);
  const html=String.raw`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FlowChain Studio — Read-only Process Viewer</title>
@@ -121,8 +121,8 @@ document.querySelectorAll('.viewport').forEach(function(view){
 </script></body></html>`;
  return html.replace('__PROJECT_DATA__',data).replace('__TODAY_SVG__',today).replace('__TOMORROW_SVG__',tomorrow);
 }
-export function exportInteractiveHtml(project){
- const html=buildInteractiveHtml(project);
+export function exportInteractiveHtml(project,elkOrders=null){
+ const html=buildInteractiveHtml(project,elkOrders);
  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
  const a=document.createElement('a');a.href=url;a.download=fileName(project.title)+'-interactive.html';document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
