@@ -1,5 +1,6 @@
 // Browser-only export: three separate high-resolution PNGs and editable PowerPoint with a step-list slide.
 import {graphLayout,graphEdges,graphSegments} from './graph';
+import {presentationSummary} from './presentation-summary';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 function geometry(project,flow){
@@ -123,6 +124,65 @@ export async function exportPptx(project){
    });
   }
   slide.addText('Numbers refer to the corresponding TODAY or TOMORROW flow diagram.',{x:.38,y:7.13,w:12.3,h:.18,fontSize:9,color:'7A8598',margin:0});
+ }
+ // Preserve slide 1 TODAY, slide 2 TOMORROW and the numbered step list next.
+ // Executive summary follows the step list, keeping existing presentation order.
+ const summary=presentationSummary(project);
+ {
+  const slide=pptx.addSlide();slide.background={color:'FFFFFF'};
+  slide.addText('Process improvement overview',{x:.38,y:.28,w:12.4,h:.43,fontSize:23,bold:true,color:'27384B',margin:0});
+  slide.addText(project.title,{x:.38,y:.79,w:12.1,h:.25,fontSize:12,color:'78869A',margin:0});
+  const columns=[
+   {label:'TODAY',m:summary.metrics.today,x:.42,color:'46556A'},
+   {label:'TOMORROW',m:summary.metrics.tomorrow,x:6.82,color:'C81647'}
+  ];
+  columns.forEach(({label,m,x,color})=>{
+   slide.addShape(S.rect,{x,y:1.35,w:6.07,h:1.7,fill:{color:'F3F6FA'},line:{color:'E0E7EF',width:.5}});
+   slide.addText(label,{x:x+.2,y:1.56,w:2.2,h:.28,bold:true,fontSize:15,color,margin:0});
+   slide.addText(String(m.steps),{x:x+.2,y:2.02,w:1.4,h:.48,bold:true,fontSize:28,color:'27384B',margin:0});
+   slide.addText('steps',{x:x+1.65,y:2.14,w:1.2,h:.25,fontSize:11,color:'63738A',margin:0});
+   slide.addText(String(m.manual)+' manual  ·  '+String(m.automated)+' automated  ·  '+String(m.assisted)+' AI-assisted',
+    {x:x+.2,y:2.64,w:5.66,h:.22,fontSize:10,color:'63738A',margin:0});
+  });
+  const counters=[
+   ['Added',summary.diff.counts.added],['Removed',summary.diff.counts.removed],
+   ['Moved',summary.diff.counts.moved],['Details changed',summary.diff.counts.updated],
+   ['Connections changed',summary.diff.counts.dependencies]
+  ];
+  slide.addText('What changes',{x:.42,y:3.39,w:5.5,h:.33,fontSize:17,bold:true,color:'27384B',margin:0});
+  counters.forEach(([label,count],i)=>{
+   const x=.42+(i%3)*4.28,y=3.96+Math.floor(i/3)*.86;
+   slide.addShape(S.rect,{x,y,w:4.07,h:.68,line:{color:'E1E7F0',width:.5},fill:{color:'FFFFFF'}});
+   slide.addText(String(count),{x:x+.17,y:y+.11,w:.6,h:.3,fontSize:20,bold:true,color:'CF1748',margin:0});
+   slide.addText(label,{x:x+.83,y:y+.2,w:3.0,h:.22,fontSize:11,color:'485A70',margin:0});
+  });
+  const tt=summary.metrics.today,tm=summary.metrics.tomorrow;
+  const duration=summary.timeComparable
+   ?'Estimated longest dependency path: TODAY '+tt.hours.toFixed(1)+'h → TOMORROW '+tm.hours.toFixed(1)+'h.'
+   :'Process timing not compared: enter work / waiting time estimates in BOTH flows.';
+  slide.addText(duration,{x:.42,y:5.98,w:12.35,h:.35,fontSize:12,bold:true,color:'29384B',margin:0});
+  slide.addText('Indicative model only. Parallel branches are evaluated by longest prerequisite, without resource constraints.',
+   {x:.42,y:6.43,w:12.25,h:.3,fontSize:10,color:'758398',margin:0});
+  slide.addText('Source: FlowChain Studio • TODAY/TOMORROW data within this presentation',
+   {x:.42,y:7.10,w:12.2,h:.2,fontSize:8,color:'8996A7',margin:0});
+ }
+ // Each category receives a dedicated page when it has material changes.
+ // Avoid clipping long step names by using up to 16 entries per page.
+ for(const category of summary.changes){
+  if(!category.items.length)continue;
+  const pages=Math.ceil(category.items.length/16);
+  for(let page=0;page<pages;page++){
+   const slide=pptx.addSlide();slide.background={color:'FFFFFF'};
+   slide.addText(category.title+(pages>1?' ('+(page+1)+'/'+pages+')':''),
+    {x:.4,y:.3,w:12.4,h:.48,fontSize:22,bold:true,color:'27384B',margin:0});
+   category.items.slice(page*16,(page+1)*16).forEach((label,i)=>{
+    const y=1.05+i*.37;
+    if(i%2===0)slide.addShape(S.rect,{x:.35,y:y-.025,w:12.6,h:.355,fill:{color:'F4F7FA'},line:{color:'F4F7FA',transparency:100}});
+    slide.addText(String(page*16+i+1),{x:.58,y,w:.45,h:.24,fontSize:11,color:'C81647',bold:true,margin:0});
+    slide.addText(String(label),{x:1.10,y,w:11.45,h:.25,fontSize:12,color:'29384B',margin:0,breakLine:false});
+   });
+   slide.addText('FlowChain Studio • automatic process change analysis',{x:.4,y:7.10,w:12.3,h:.2,fontSize:9,color:'8A95A7',margin:0});
+  }
  }
  await pptx.writeFile({fileName:safeFile(project.title)+'-today-tomorrow-steps.pptx'});
 }
