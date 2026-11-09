@@ -1,5 +1,5 @@
 // Browser-only export: three separate high-resolution PNGs and editable PowerPoint with a step-list slide.
-import {graphLayout,graphEdges,edgePath} from './graph';
+import {graphLayout,graphEdges,graphSegments} from './graph';
 const safeFile=name=>(name||'flowchain').replace(/[^a-z0-9_-]+/gi,'-');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 function geometry(project,flow){
@@ -10,9 +10,9 @@ function svgFor(project,flow){
  const g=geometry(project,flow);
  const rows=g.departments.map((d,i)=>`<rect x="8" y="${g.laneStarts[i]}" width="${g.width-16}" height="${g.laneHeights[i]-6}" rx="7" fill="${i%2?'#e9eef4':'#f3f6fa'}"/><text x="20" y="${g.laneStarts[i]+g.laneHeights[i]/2+4}" fill="#273747" font-family="Arial" font-weight="bold" font-size="13">${esc(d.name)}</text>`).join('');
  const dash=project.flows[flow].lineStyle==='dotted'?'stroke-dasharray="2 9"':'';
- const edges=graphEdges(g.steps,g.positions).map(({a,b})=>`<path d="${edgePath(a,b)}" fill="none" stroke="#d91a48" stroke-width="3" stroke-linecap="round" ${dash} stroke-linejoin="round"/>`).join('');
+ const segments=graphSegments(g.steps,g.positions).map(({x1,y1,x2,y2})=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#d91a48" stroke-width="3" stroke-linecap="round" ${dash}/>`).join('');
  const nodes=g.steps.map((s,i)=>{const p=g.positions.get(s.id);return `<circle cx="${p.x}" cy="${p.y}" r="16" fill="#d91a48" stroke="white" stroke-width="3"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" fill="white" font-family="Arial" font-size="12" font-weight="bold">${i+1}</text>`}).join('');
- return `<svg xmlns="http://www.w3.org/2000/svg" width="${g.width}" height="${g.height}" viewBox="0 0 ${g.width} ${g.height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="30" font-family="Arial" font-size="20" font-weight="bold" fill="#d91a48">${flow.toUpperCase()}</text><text x="20" y="58" font-family="Arial" font-size="13" fill="#435066">${esc(project.title)} — ${esc(project.subtitle)}</text><text x="20" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPARTMENT</text><text x="215" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPENDENCY FLOW →</text>${rows}${edges}${nodes}</svg>`;
+ return `<svg xmlns="http://www.w3.org/2000/svg" width="${g.width}" height="${g.height}" viewBox="0 0 ${g.width} ${g.height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="30" font-family="Arial" font-size="20" font-weight="bold" fill="#d91a48">${flow.toUpperCase()}</text><text x="20" y="58" font-family="Arial" font-size="13" fill="#435066">${esc(project.title)} — ${esc(project.subtitle)}</text><text x="20" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPARTMENT</text><text x="215" y="115" font-family="Arial" font-size="12" font-weight="bold" fill="#728099">DEPENDENCY FLOW →</text>${rows}${segments}${nodes}</svg>`;
 }
 function saveBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
 async function rasterize(project,flow,scale){
@@ -93,11 +93,8 @@ export async function exportPptx(project){
    slide.addShape(S.line,{x,y,w:Math.max(0,Math.abs(x2-x1)),h:Math.max(0,Math.abs(y2-y1)),
     flipV:(x2-x1)*(y2-y1)<0,line:{...lineStyle}});
   };
-  for(const {a,b} of graphEdges(g.steps,g.positions)){
-   const x1=xMap(a.x),y1=yMap(a.y),x2=xMap(b.x),y2=yMap(b.y),mid=(x1+x2)/2;
-   drawLine(x1,y1,mid,y1);
-   drawLine(mid,y1,mid,y2);
-   drawLine(mid,y2,x2,y2);
+  for(const {x1,y1,x2,y2} of graphSegments(g.steps,g.positions)){
+   drawLine(xMap(x1),yMap(y1),xMap(x2),yMap(y2));
   }
   g.steps.forEach((step,i)=>{
    const p=g.positions.get(step.id),x=xMap(p.x),y=yMap(p.y),r=.13;
