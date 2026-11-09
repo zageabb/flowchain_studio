@@ -23,8 +23,11 @@ export function processMetrics(steps){
   const s=byId.get(current);
   current=s.dependsOn.length?s.dependsOn.reduce((a,b)=>finish.get(a)>=finish.get(b)?a:b):null;
  }
+ const totalWorkHours=steps.reduce((sum,s)=>sum+Math.max(0,Number(s.durationHours)||0),0);
+ const totalWaitHours=steps.reduce((sum,s)=>sum+Math.max(0,Number(s.waitHours)||0),0);
+ const totalEffortHours=totalWorkHours+totalWaitHours;
  const manual=steps.filter(s=>(s.activityType||'manual')==='manual').length;
  const automated=steps.filter(s=>s.activityType==='automated').length;
  const assisted=steps.filter(s=>s.activityType==='ai-assisted').length;
- return {steps:steps.length,hours,criticalPath:path,manual,automated,assisted,starts,finish};
+ return {steps:steps.length,hours,totalWorkHours,totalWaitHours,totalEffortHours,criticalPath:path,manual,automated,assisted,starts,finish};
 }
