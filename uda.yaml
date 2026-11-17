@@ -1,0 +1,30 @@
+schema_version: 1
+application:
+  name: flowchain-studio
+  display_name: Flowchain Studio
+  group: TAIJU - Development
+source:
+  branch: main
+runtime:
+  type: static
+  working_dir: dist
+build:
+  working_dir: .
+  commands:
+    - ["npm", "install", "--package-lock=false"]
+    - ["npm", "run", "build", "--", "--base=/apps/flowchain-studio/"]
+service:
+  type: static
+  port: 5097
+  health_path: /
+proxy:
+  enabled: true
+  path: /apps/flowchain-studio/
+  authentication: uda
+environment:
+  required: []
+deployment:
+  auto_update: true
+  rollback: true
+  github_reporting: false
+
