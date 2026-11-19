@@ -13,7 +13,7 @@ builds:
     toolchain: node
     working_dir: "."
     commands:
-      - ["npm","install","--package-lock=false"]
+      - ["npm","ci"]
       - ["npm","run","build","--","--base=/apps/flowchain-studio/"]
 static:
   output_dir: "dist"
