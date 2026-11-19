@@ -1,0 +1,34 @@
+# V2 review candidate; no activation authority
+schema_version: 2
+application:
+  name: flowchain-studio
+  kind: web
+  display_name: "Flowchain Studio"
+  group: "TAIJU - Development"
+source:
+  branch: main
+  repository: "zageabb/flowchain_studio"
+builds:
+  - name: build
+    toolchain: node
+    working_dir: "."
+    commands:
+      - ["npm","ci"]
+      - ["npm","run","build","--","--base=/apps/flowchain-studio/"]
+static:
+  output_dir: "dist"
+  publication: atomic-symlink
+  base_path: /apps/flowchain-studio/
+proxy:
+  enabled: true
+  upstream: static
+  canonical_path: /apps/flowchain-studio/
+  authentication: uda
+environment:
+  required: []
+deployment:
+  strategy: static
+  approval: explicit
+  auto_update: false
+  rollback: true
+  github_reporting: false
